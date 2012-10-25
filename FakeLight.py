@@ -5,18 +5,23 @@ class LightContAndLine():
 	timeLine = []
 	fluxLine = []
 	
-	def __init__(self, length, scale, sigma, alpha, beta):
+	def __init__(self, length):
 		
 		# Input parameters
 		self.length = length
-		self.scale = scale
-		self.sigma = sigma
-		self.alpha = alpha
-		self.beta = beta
+		# self.nBins = nBins
+		# self.scale = scale
+		# self.sigma = sigma
+		# self.alpha = alpha
+		# self.beta = beta
 		
 		# Generate a lightcurve
 		lightCurve = LightCurveWiener(self.length)
 		lightCurve.generate()
+		
+		# Normalize
+		for i in range(len(lightCurve.flux)):
+			lightCurve.flux[i] = lightCurve.flux[i] / max(lightCurve.flux) * 5. + 5.
 		
 		# Extract (time,flux) values into two seperate list pairs
 		# self.timeCont = list(lightCurve.time)
@@ -37,24 +42,12 @@ class LightContAndLine():
 		self.lightCurveLine.time = list(lightCurve.time)
 		self.lightCurveLine.flux = list(lightCurve.flux)
 		
-		# Reprocess the continuum
-		self.lightCurveLine.smooth(self.sigma)
-		self.lightCurveLine.scale(self.scale)
-		
-		# Constant time-lag
-		self.lightCurveLine.lag_const(self.alpha)
-		
-		# Luminosity dependent time-lag
-		# nBins = 100
-		# self.lightCurveLine.lag_luminosity(nBins, self.alpha, self.beta)
-		# self.lightCurveCont.bin(nBins)
-		
 		# Save originals for possible restore
 		self.lightCurveContOrg.time = list(self.lightCurveCont.time)
 		self.lightCurveContOrg.flux = list(self.lightCurveCont.flux)
 		self.lightCurveLineOrg.time = list(self.lightCurveLine.time)
 		self.lightCurveLineOrg.flux = list(self.lightCurveLine.flux)
-	
+		
 	def restore(self):
 		self.lightCurveCont.time = list(self.lightCurveContOrg.time)
 		self.lightCurveCont.flux = list(self.lightCurveContOrg.flux)
@@ -66,6 +59,34 @@ class LightContAndLine():
 		self.lightCurveCont.bin(nBins)
 		self.lightCurveLine.bin(nBins)
 	
+	def reprocess(self, nBins, scale, sigma, c, alpha, beta):
+		
+		self.restore()
+		
+		# Reprocess the continuum to produce the line
+		if (beta == 0 and alpha == 0): ## REDUNDANT!
+			# Constant time-lag
+			self.lightCurveLine.lag_const(c)
+		else:
+			# Luminosity dependent time-lag
+			self.lightCurveLine.lag_luminosity(self.lightCurveCont, c, alpha, beta)
+			#self.lightCurveCont.bin(nBins)
+			print "Lag corresponding to average luminosity (Continuum) = ", c + alpha * (self.lightCurveCont.getAverageFlux())**beta
+			print "Lag corresponding to average luminosity (Line) = ", c + alpha * (self.lightCurveLine.getAverageFlux())**beta
+			print "Minimum lag = ", c + alpha * (min(self.lightCurveCont.flux))**beta
+			print "Maximum lag = ", c + alpha * (max(self.lightCurveCont.flux))**beta
+			print "Lag difference = ", c + alpha * (max(self.lightCurveCont.flux))**beta - c + alpha * (min(self.lightCurveCont.flux))**beta
+		
+		self.trim()
+		
+		self.lightCurveCont.bin(nBins)
+		self.lightCurveLine.bin(nBins)
+		
+		self.lightCurveLine.scale(scale)
+		self.lightCurveLine.smooth(sigma)
+		
+		self.plot()
+		
 	def plot(self, style='-'):
 		import matplotlib.pyplot as plt
 		plt.figure()
@@ -73,24 +94,6 @@ class LightContAndLine():
 		plt.plot(self.lightCurveLine.time,self.lightCurveLine.flux, str(style)+'r', label='line')
 		plt.legend(frameon=False)
 		#plt.show()
-	
-	def doIntersection(self):
-		#### BROKEN ####
-		################
-		# Cut away regions with no overlap
-		xsIntersection = list(set(self.lightCurveCont.time) & set(self.lightCurveLine.time))
-		
-		ysContIntersection = []
-		ysLineIntersection = []
-		for x in xsIntersection:
-			ysContIntersection.append(self.lightCurveCont.flux[int(x)])
-			ysLineIntersection.append(self.lightCurveLine.flux[int(x)])
-		
-		self.lightCurveCont.time = xsIntersection
-		self.lightCurveLine.time = xsIntersection
-		
-		self.lightCurveCont.flux = ysContIntersection
-		self.lightCurveLine.flux = ysLineIntersection
 	
 	def trim(self):
 		# Find differences
@@ -105,8 +108,24 @@ class LightContAndLine():
 		self.lightCurveLine.time = list(self.lightCurveLine.time[:len(self.lightCurveLine.time)-upperDiff])
 		self.lightCurveLine.flux = list(self.lightCurveLine.flux[:len(self.lightCurveLine.flux)-upperDiff])
 		
-	#def observeIntervals(self, positions, widths):
+	def observeIntervals(self, times, widths):
 		
+		timeObserved = []
+		fluxContObserved = []
+		fluxLineObserved = []
+		
+		for i in range(len(times)):
+			for j in range(len(self.lightCurveCont.time)):
+				if self.lightCurveCont.time[j] > times[i]-widths[i] and self.lightCurveCont.time[j] < times[i]+widths[i]:
+					timeObserved.append(self.lightCurveCont.time[j])
+					fluxContObserved.append(self.lightCurveCont.flux[j])
+					fluxLineObserved.append(self.lightCurveLine.flux[j])
+		
+		self.lightCurveCont.time = timeObserved
+		self.lightCurveLine.time = timeObserved
+		
+		self.lightCurveCont.flux = fluxContObserved
+		self.lightCurveLine.flux = fluxLineObserved
 	
 	def observeRandom(self, nRuns, lengthRun):
 		
@@ -144,6 +163,11 @@ class LightContAndLine():
 	def saveToTxt(self):
 		self.lightCurveCont.saveToTxt('lc_cont.txt')
 		self.lightCurveLine.saveToTxt('lc_line.txt')
+	
+	def __repr__(self):
+		print "<LightContAndLine(length='%f')" % (self.length)
+		print "Average luminosity (Continuum) = '%f'" % self.lightCurveCont.getAverageFlux()
+		print "Average luminosity (Line) = '%f'" % self.lightCurveLine.getAverageFlux()
 
 class LightCurveWiener():
 	
@@ -155,9 +179,8 @@ class LightCurveWiener():
 		self.length = length
 		
 		# Generate random walk light curve using pyprocesses.py
-		self.wienerParams = {"mu":0, "sigma":1}
+		self.wienerParams = {"mu":0, "sigma":0.25}
 		self.wienerInitial = {"startTime":0, "startPosition":0, "endTime":1200, "endPosition": 1 }
-		
 	
 	def generate(self):
 		import pyprocess as SP
@@ -186,10 +209,11 @@ class LightCurveWiener():
 	def smooth(self, sigma=1.5):
 		import scipy.signal as signal
 		
+		length = int(sigma*10)
+		
 		def gauss_kern(sigma=1.5):
 			import numpy as np
 			""" Returns a normalized 1D gauss kernel array for convolutions """
-			length = int(sigma*10)
 			x = np.array(range(length))
 			x = x-length/2.
 			#sigma = 1.5
@@ -199,32 +223,33 @@ class LightCurveWiener():
 		#g = gauss_kern(sigma=len(self.time)/100.)
 		g = gauss_kern(sigma)
 		
-		self.flux = signal.convolve(self.flux,g,mode='same')
+		extraFluxLower = [self.flux[0] for i in range(length)]
+		extraFluxUpper = [self.flux[-1] for i in range(length)]
+		
+		self.flux = signal.convolve(extraFluxLower+self.flux+extraFluxUpper,g,mode='same')
+		
+		self.flux = self.flux[length:]
+		self.flux = self.flux[:-length]
+		
+		#self.flux = signal.convolve(self.flux,g,mode='same')
 	
 	def lag_const(self, lag_const):
 		for i in range(len(self.time)):
 			self.time[i] += lag_const
 	
-	def lag_luminosity(self, nBins, alpha, beta):
+	def lag_luminosity(self, lightCurveCont, c, alpha, beta):
 		for i in range(len(self.time)):
-			lag = alpha * (self.flux[i])**beta
+			lag = c + alpha*(lightCurveCont.flux[i])**beta
 			self.time[i] += lag
-		
-		# Since the lags are non linear
-		# - luminosities from different epochs will overlap
-		# We therefore have to make bins and create a histogram
-		
-		self.bin(nBins)
 	
 	def bin(self, nBins):
 		binSize = len(self.time)/nBins
-		
 		binPositions = [0]*nBins
 		binValues = [0]*nBins
 		
 		# Calculate bin positions
 		for i in range(nBins):
-			binPositions[i] = min(self.time) + i*binSize + 0.5*binSize
+			binPositions[i] = int(min(self.time)) + i*binSize + 0.5*binSize
 		
 		# Sum y values for each bin
 		for i in range(nBins):
@@ -247,9 +272,12 @@ class LightCurveWiener():
 		plt.plot(self.time,self.flux)
 		#plt.show()
 	
+	def getAverageFlux(self):
+		return sum(self.flux)/len(self.flux)
+	
 	def saveToTxt(self, outFileName='lightcurve.txt'):
 		from numpy import savetxt, transpose
-		errors = [5.0]*len(self.time)
+		errors = [max(self.flux)/10.]*len(self.time)
 		savetxt(outFileName, transpose((self.time, self.flux, errors)))
 
 

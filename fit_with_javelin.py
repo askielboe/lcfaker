@@ -1,11 +1,19 @@
-# # Generate lightCurves
-# from FakeLight import LightContAndLine
-# 
-# lc = LightContAndLine(1000, 1.0, 5.0, 100.0, 0.5)
-# lc.bin(100)
-# lc.observe(5, 50)
-# lc.plot('o')
-# lc.saveToTxt()
+# Generate lightCurves
+from FakeLight import LightContAndLine
+
+lc = LightContAndLine(1000)
+
+# lc.lightCurveLine.lag_luminosity(lc.lightCurveCont, 100., 1.0, 0.5)
+# lc.trim()
+# lc.lightCurveLine.smooth(1.5)
+
+lc.reprocess(200, 1, 1.5, 100., 1.5, 0.519)
+
+lc.observeIntervals([250,400,650,800],[45,55,60,65])
+
+lc.plot('o')
+
+lc.saveToTxt()
 
 # Run JAVELIN
 from javelin.zylc import get_data
