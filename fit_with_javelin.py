@@ -7,7 +7,7 @@ lc = LightContAndLine(1000)
 # lc.trim()
 # lc.lightCurveLine.smooth(1.5)
 
-lc.reprocess(200, 1, 1.5, 100., 1.5, 0.519)
+lc.reprocess(200, 0.9, 1.5, 100., 0.0, 0.519)
 
 lc.observeIntervals([250,400,650,800],[45,55,60,65])
 

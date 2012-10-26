@@ -16,8 +16,9 @@ class LightContAndLine():
 		# self.beta = beta
 		
 		# Generate a lightcurve
-		lightCurve = LightCurveWiener(self.length)
-		lightCurve.generate()
+		lightCurve = LightCurve(self.length)
+		#lightCurve.generateWiener()
+		lightCurve.generateOU()
 		
 		# Normalize
 		for i in range(len(lightCurve.flux)):
@@ -30,10 +31,10 @@ class LightContAndLine():
 		# self.fluxLine = list(lightCurve.flux)
 		
 		# Make new lightCurves for Cont, Line and original for storing the original lightcurve
-		self.lightCurveCont = LightCurveWiener(self.length)
-		self.lightCurveContOrg = LightCurveWiener(self.length)
-		self.lightCurveLine = LightCurveWiener(self.length)
-		self.lightCurveLineOrg = LightCurveWiener(self.length)
+		self.lightCurveCont = LightCurve(self.length)
+		self.lightCurveContOrg = LightCurve(self.length)
+		self.lightCurveLine = LightCurve(self.length)
+		self.lightCurveLineOrg = LightCurve(self.length)
 		
 		# Using the (time,flux) list pairs as extracted earlier
 		self.lightCurveCont.time = list(lightCurve.time)
@@ -75,7 +76,7 @@ class LightContAndLine():
 			print "Lag corresponding to average luminosity (Line) = ", c + alpha * (self.lightCurveLine.getAverageFlux())**beta
 			print "Minimum lag = ", c + alpha * (min(self.lightCurveCont.flux))**beta
 			print "Maximum lag = ", c + alpha * (max(self.lightCurveCont.flux))**beta
-			print "Lag difference = ", c + alpha * (max(self.lightCurveCont.flux))**beta - c + alpha * (min(self.lightCurveCont.flux))**beta
+			print "Lag difference = ", (c + alpha * (max(self.lightCurveCont.flux))**beta) - (c + alpha * (min(self.lightCurveCont.flux))**beta)
 		
 		self.trim()
 		
@@ -169,7 +170,7 @@ class LightContAndLine():
 		print "Average luminosity (Continuum) = '%f'" % self.lightCurveCont.getAverageFlux()
 		print "Average luminosity (Line) = '%f'" % self.lightCurveLine.getAverageFlux()
 
-class LightCurveWiener():
+class LightCurve():
 	
 	time = []
 	flux = []
@@ -178,13 +179,14 @@ class LightCurveWiener():
 		
 		self.length = length
 		
-		# Generate random walk light curve using pyprocesses.py
-		self.wienerParams = {"mu":0, "sigma":0.25}
-		self.wienerInitial = {"startTime":0, "startPosition":0, "endTime":1200, "endPosition": 1 }
+		
 	
-	def generate(self):
+	def generateWiener(self):
 		import pyprocess as SP
-		Wiener = SP.Wiener_process(self.wienerParams, self.wienerInitial)
+		# Generate random walk light curve using pyprocesses.py
+		wienerParams = {"mu":0, "sigma":0.25}
+		wienerInitial = {"startTime":0, "startPosition":0, "endTime":1200, "endPosition": 1 }
+		Wiener = SP.Wiener_process(wienerParams, wienerInitial)
 		path = Wiener.generate_sample_path(range(self.length))
 		self.time = [x for i,[x,y] in enumerate(path)]
 		self.flux = [y for i,[x,y] in enumerate(path)]
@@ -193,8 +195,22 @@ class LightCurveWiener():
 		for i in range(len(self.flux)):
 			self.flux[i] += abs(min(self.flux))
 	
+	def generateOU(self):
+		import pyprocess as SP
+		# Generate random walk light curve using pyprocesses.py
+		OUParams = {"theta":2., "mu":0., "sigma":0.25}
+		OUInitial = {"startTime":0, "startPosition":0, "endTime":1200, "endPosition": 1 }
+		OU = SP.OU_process(OUParams, OUInitial)
+		path = OU.generate_sample_path(range(self.length))
+		self.time = [x for i,[x,y] in enumerate(path)]
+		self.flux = [y for i,[x,y] in enumerate(path)]
+		
+		# Move light curve up to avoid negative values
+		#for i in range(len(self.flux)):
+		#	self.flux[i] += abs(min(self.flux))
+	
 	def copy(self):
-		copy = LightCurveWiener(self.length)
+		copy = LightCurve(self.length)
 		copy.path = self.path
 		for i in range(len(copy.time)):
 			copy.time[i] = self.time[i]
@@ -243,7 +259,7 @@ class LightCurveWiener():
 			self.time[i] += lag
 	
 	def bin(self, nBins):
-		binSize = len(self.time)/nBins
+		binSize = (max(self.time)-min(self.time))/float(nBins)
 		binPositions = [0]*nBins
 		binValues = [0]*nBins
 		
@@ -256,11 +272,15 @@ class LightCurveWiener():
 			for j in range(len(self.time)):
 				x = self.time[j]
 				y = self.flux[j]
-				if x > binPositions[i]-0.5*binSize and x < binPositions[i]+0.5*binSize:
-					binValues[i] += y
+				if i < nBins-1:
+					if x >= binPositions[i]-0.5*binSize and x < binPositions[i]+0.5*binSize:
+						binValues[i] += y
+				else:
+					if x >= binPositions[i]-0.5*binSize and x <= binPositions[i]+0.5*binSize:
+						binValues[i] += y
 		
-		self.time = binPositions
-		self.flux = binValues
+		self.time = list(binPositions)
+		self.flux = list(binValues)
 	
 	def scale(self, scale):
 		for i in range(len(self.flux)):
