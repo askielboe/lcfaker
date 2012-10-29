@@ -1,10 +1,12 @@
 # Generate lightCurves
 from FakeLight import LightContAndLine
+lc = LightContAndLine(1000)
+lc.reprocess(200, 1.0, 1.5, 1., 100.0, 0.519)
 
-lc = LightContAndLine(2000)
-
-t = lc.lightCurveCont.time
-f = lc.lightCurveCont.flux
+###########################
+from FakeLight import LightContAndLine
+lc = LightContAndLine(1000)
+lc.lightCurveLine.lag_luminosity(lc.lightCurveCont, 1., 100., 0.519)
 
 # from numpy import asarray
 # 
@@ -29,6 +31,7 @@ f = lc.lightCurveCont.flux
 # lc.trim()
 # lc.lightCurveLine.smooth(1.5)
 
+lc.reprocess(200, 1.0, 1.5, 100., 0.0, 0.0)
 lc.reprocess(200, 1.0, 1.5, 100., 1.0, 0.519)
 
 # Should be equivalent to:
@@ -39,9 +42,12 @@ lc.rbin(200)
 lc.lightCurveLine.smooth(1.5)
 
 
+t = lc.lightCurveCont.time
+f = lc.lightCurveCont.flux
+
 ###
 
-lc.observeIntervals([250,400,650,800],[45,55,60,65])
+lc.observeIntervals([250,400,500,650,800],[45,55,30,60,65])
 
 lc.plot('o')
 

@@ -16,13 +16,23 @@ class LightContAndLine():
 		# self.beta = beta
 		
 		# Generate a lightcurve
-		lightCurve = LightCurve(self.length)
-		lightCurve.generateWiener()
+		self.lightCurve = LightCurve(self.length)
+		
+		# Now done when defining the light curve
+		#lightCurve.generateWiener()
 		#lightCurve.generateOU()
 		
 		# Normalize
-		for i in range(len(lightCurve.flux)):
-			lightCurve.flux[i] = lightCurve.flux[i] / max(lightCurve.flux) * 5. + 5.
+		
+		# for i in range(len(self.lightCurve.flux)):
+			#self.lightCurve.flux[i] = self.lightCurve.flux[i] / max(self.lightCurve.flux) * 5. + 5.
+		
+		# Normalize using numpy array
+		self.lightCurve.path[:,1] = self.lightCurve.path[:,1] / max(abs(self.lightCurve.path[:,1])) + 1.
+		
+		from copy import copy
+		self.lightCurveCont = copy(self.lightCurve)
+		self.lightCurveLine = copy(self.lightCurve)
 		
 		# Extract (time,flux) values into two seperate list pairs
 		# self.timeCont = list(lightCurve.time)
@@ -30,31 +40,32 @@ class LightContAndLine():
 		# self.timeLine = list(lightCurve.time)
 		# self.fluxLine = list(lightCurve.flux)
 		
-		# Make new lightCurves for Cont, Line and original for storing the original lightcurve
-		self.lightCurveCont = LightCurve(self.length)
-		self.lightCurveContOrg = LightCurve(self.length)
-		self.lightCurveLine = LightCurve(self.length)
-		self.lightCurveLineOrg = LightCurve(self.length)
-		
-		# Using the (time,flux) list pairs as extracted earlier
-		self.lightCurveCont.time = list(lightCurve.time)
-		self.lightCurveCont.flux = list(lightCurve.flux)
-		
-		self.lightCurveLine.time = list(lightCurve.time)
-		self.lightCurveLine.flux = list(lightCurve.flux)
-		
-		# Save originals for possible restore
-		self.lightCurveContOrg.time = list(self.lightCurveCont.time)
-		self.lightCurveContOrg.flux = list(self.lightCurveCont.flux)
-		self.lightCurveLineOrg.time = list(self.lightCurveLine.time)
-		self.lightCurveLineOrg.flux = list(self.lightCurveLine.flux)
+		# # Make new lightCurves for Cont, Line and original for storing the original lightcurve
+		# self.lightCurveCont = LightCurve(self.length)
+		# self.lightCurveContOrg = LightCurve(self.length)
+		# self.lightCurveLine = LightCurve(self.length)
+		# self.lightCurveLineOrg = LightCurve(self.length)
+		# 
+		# # Save working lightcurves
+		# self.lightCurveCont.path = asarray(list(lightCurve.path))
+		# self.lightCurveLine.path = asarray(list(lightCurve.path))
+		# 
+		# # Save originals for possible restore
+		# self.lightCurveContOrg.time = list(self.lightCurveCont.time)
+		# self.lightCurveContOrg.flux = list(self.lightCurveCont.flux)
+		# self.lightCurveLineOrg.time = list(self.lightCurveLine.time)
+		# self.lightCurveLineOrg.flux = list(self.lightCurveLine.flux)
 		
 	def restore(self):
-		self.lightCurveCont.time = list(self.lightCurveContOrg.time)
-		self.lightCurveCont.flux = list(self.lightCurveContOrg.flux)
+		# self.lightCurveCont.time = list(self.lightCurveContOrg.time)
+		# self.lightCurveCont.flux = list(self.lightCurveContOrg.flux)
+		# 
+		# self.lightCurveLine.time = list(self.lightCurveLineOrg.time)
+		# self.lightCurveLine.flux = list(self.lightCurveLineOrg.flux)
 		
-		self.lightCurveLine.time = list(self.lightCurveLineOrg.time)
-		self.lightCurveLine.flux = list(self.lightCurveLineOrg.flux)
+		from copy import copy
+		self.lightCurveCont = copy(self.lightCurve)
+		self.lightCurveLine = copy(self.lightCurve)
 	
 	def rebin(self, nBins):
 		self.lightCurveCont.rebin(nBins)
@@ -65,7 +76,7 @@ class LightContAndLine():
 		self.restore()
 		
 		# Reprocess the continuum to produce the line
-		if (beta == 0 and alpha == 0): ## REDUNDANT!
+		if (beta == 0. and alpha == 0.): ## REDUNDANT!
 			# Constant time-lag
 			self.lightCurveLine.lag_const(c)
 		else:
@@ -101,12 +112,12 @@ class LightContAndLine():
 		upperDiff = int(max(self.lightCurveLine.time) - max(self.lightCurveCont.time))
 		
 		# Remove first lowerDiff elements from lightCurveCont
-		self.lightCurveCont.time = list(self.lightCurveCont.time[lowerDiff:])
-		self.lightCurveCont.flux = list(self.lightCurveCont.flux[lowerDiff:])
+		self.lightCurveCont.time = self.lightCurveCont.time[lowerDiff:]
+		self.lightCurveCont.flux = self.lightCurveCont.flux[lowerDiff:]
 		
 		# Remove last upperDiff elements from lightCurveLine
-		self.lightCurveLine.time = list(self.lightCurveLine.time[:len(self.lightCurveLine.time)-upperDiff])
-		self.lightCurveLine.flux = list(self.lightCurveLine.flux[:len(self.lightCurveLine.flux)-upperDiff])
+		self.lightCurveLine.time = self.lightCurveLine.time[:len(self.lightCurveLine.time)-upperDiff]
+		self.lightCurveLine.flux = self.lightCurveLine.flux[:len(self.lightCurveLine.flux)-upperDiff]
 		
 	def observeIntervals(self, times, widths):
 		
@@ -126,6 +137,8 @@ class LightContAndLine():
 		
 		self.lightCurveCont.flux = fluxContObserved
 		self.lightCurveLine.flux = fluxLineObserved
+		
+		self.plot('o')
 	
 	def observeRandom(self, nRuns, lengthRun):
 		
@@ -160,6 +173,8 @@ class LightContAndLine():
 		self.lightCurveCont.flux = ysContObserved
 		self.lightCurveLine.flux = ysLineObserved
 		
+		self.plot('o')
+		
 	def saveToTxt(self):
 		self.lightCurveCont.saveToTxt('lc_cont.txt')
 		self.lightCurveLine.saveToTxt('lc_line.txt')
@@ -170,23 +185,36 @@ class LightContAndLine():
 		print "Average luminosity (Line) = '%f'" % self.lightCurveLine.getAverageFlux()
 
 class LightCurve():
+	#from numpy import array
 	
-	time = []
-	flux = []
+	#time = array(0)
+	#flux = array(0)
 	
 	def __init__(self, length):
 		
 		self.length = length
-	
-	def generateWiener(self):
+		
+		# Generate Wiener Path
+		from numpy import asarray
 		import pyprocess as SP
 		# Generate random walk light curve using pyprocesses.py
 		wienerParams = {"mu":0, "sigma":0.1}
 		wienerInitial = {"startTime":0, "startPosition":0, "endTime":self.length, "endPosition": 0 }
 		Wiener = SP.Wiener_process(wienerParams, wienerInitial)
-		path = Wiener.generate_sample_path(range(self.length))
-		self.time = [x for i,[x,y] in enumerate(path)]
-		self.flux = [y for i,[x,y] in enumerate(path)]
+		self.path = asarray(Wiener.generate_sample_path(range(self.length)))
+		self.time = self.path[:,0]
+		self.flux = self.path[:,1]
+	
+	def generateWiener(self):
+		import pyprocess as SP
+		from numpy import asarray
+		# Generate random walk light curve using pyprocesses.py
+		wienerParams = {"mu":0, "sigma":0.1}
+		wienerInitial = {"startTime":0, "startPosition":0, "endTime":self.length, "endPosition": 0 }
+		Wiener = SP.Wiener_process(wienerParams, wienerInitial)
+		return asarray(Wiener.generate_sample_path(range(self.length)))
+		#self.time = [x for i,[x,y] in enumerate(path)]
+		#self.flux = [y for i,[x,y] in enumerate(path)]
 		
 		# Move light curve up to avoid negative values
 		for i in range(len(self.flux)):
@@ -194,13 +222,14 @@ class LightCurve():
 	
 	def generateOU(self):
 		import pyprocess as SP
+		from numpy import asarray
 		# Generate random walk light curve using pyprocesses.py
 		OUParams = {"theta":1., "mu":5., "sigma":1.25}
 		OUInitial = {"startTime":0, "startPosition":0, "endTime":self.length, "endPosition": 0 }
 		OU = SP.OU_process(OUParams, OUInitial)
-		path = OU.generate_sample_path(range(self.length))
-		self.time = [x for i,[x,y] in enumerate(path)]
-		self.flux = [y for i,[x,y] in enumerate(path)]
+		self.path = asarray(OU.generate_sample_path(range(self.length)))
+		#self.time = [x for i,[x,y] in enumerate(path)]
+		#self.flux = [y for i,[x,y] in enumerate(path)]
 		
 		# Move light curve up to avoid negative values
 		#for i in range(len(self.flux)):
@@ -253,40 +282,50 @@ class LightCurve():
 		#self.flux = signal.convolve(self.flux,g,mode='same')
 	
 	def lag_const(self, lag_const):
-		for i in range(len(self.time)):
-			self.time[i] += lag_const
+		#for i in range(len(self.time)):
+			#self.time[i] += lag_const
+		
+		# Using numpy array
+		#self.time += lag_const
+		self.time = self.time + lag_const
+		print "Running lag_const.."
 	
 	def lag_luminosity(self, lightCurveCont, c, alpha, beta):
-		for i in range(len(self.time)):
-			lag = c + alpha*(lightCurveCont.flux[i])**beta
-			self.time[i] += lag
+		# for i in range(len(self.time)):
+		# 	lag = c + alpha*(lightCurveCont.flux[i])**beta
+		# 	self.time[i] += lag
+		# Using ndarray
+		print "Running lag_luminosity.."
+		self.time = self.time + float(c) + float(alpha)*lightCurveCont.flux**float(beta)
+		
+		# Sort time array
+		self.time.sort()
 	
 	def rebin(self, nBins):
 		from rebin import rebin
-		from numpy import asarray
+		from numpy import asarray, append
 		
 		# Convert lists to arrays
 		# Since rebin needs bin-edges we have to add an extra point to the time-list
 		# Whatever value is in a bin is then identified to lie between the two bin edges
-		t = self.time
-		tStepSize = t[1]-t[0]
-		t = asarray(t+[max(t)+tStepSize])
 		
-		f = self.flux
-		f = asarray(f)
+		time = self.time
+		flux = self.flux
 		
-		binSize = (max(t)-min(t))/float(nBins)
+		binSize = (max(time)-min(time))/float(nBins)
+		#tEdges = concatenate((time,asarray(max(time)+1.0)))
+		tEdges = append(time, max(time)+1.0)
 		
-		tnewedges = asarray([min(t) + i*binSize for i in range(nBins+1)])
+		tEdgesNew = asarray([min(time) + i*binSize for i in range(nBins+1)])
 		
-		self.flux = rebin(t,f,tnewedges)
+		self.flux = rebin(tEdges,flux,tEdgesNew)
 		
 		# To get the correct (x,y) values we have to calulate mid-bin positions based on bin edges:
 		from numpy import delete
-		tnewmidbin = delete(tnewedges,-1)
-		tnewmidbin = tnewmidbin + 0.5*binSize
+		tNewMidBin = delete(tEdgesNew,-1)
+		tNewMidBin = tNewMidBin + 0.5*binSize
 		
-		self.time = tnewmidbin
+		self.time = tNewMidBin
 	
 	def bin(self, nBins):
 		binSize = (max(self.time)-min(self.time))/float(nBins)
@@ -313,8 +352,10 @@ class LightCurve():
 		self.flux = list(binValues)
 	
 	def scale(self, scale):
-		for i in range(len(self.flux)):
-			self.flux[i] = self.flux[i] * scale
+		#for i in range(len(self.flux)):
+			#self.flux[i] = self.flux[i] * scale
+		# Using ndarray
+		self.flux = self.flux * float(scale)
 	
 	def plot(self):
 		import matplotlib.pyplot as plt
