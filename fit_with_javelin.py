@@ -1,13 +1,45 @@
 # Generate lightCurves
 from FakeLight import LightContAndLine
 
-lc = LightContAndLine(1000)
+lc = LightContAndLine(2000)
+
+t = lc.lightCurveCont.time
+f = lc.lightCurveCont.flux
+
+# from numpy import asarray
+# 
+# t = asarray(t)
+# f = asarray(f)
+# 
+# nBins = 100
+# binSize = (max(t)-min(t))/nBins
+# newBins = [i*binSize for i in range(nBins)]
+# newBins = asarray(newBins)
+# 
+# from rebin import rebin
+# rebin(t,f,newBins, interp_kind='piecewise_constant')
+# 
+# from histogram import histogram
+# 
+# t = 't',asarray(t)
+# f = asarray(f)
+# h = histogram( 'h', [t], f)
 
 # lc.lightCurveLine.lag_luminosity(lc.lightCurveCont, 100., 1.0, 0.5)
 # lc.trim()
 # lc.lightCurveLine.smooth(1.5)
 
-lc.reprocess(200, 0.9, 1.5, 100., 0.0, 0.519)
+lc.reprocess(200, 1.0, 1.5, 100., 1.0, 0.519)
+
+# Should be equivalent to:
+lc.lightCurveLine.lag_luminosity(lc.lightCurveCont, 100., 1.0, 0.519)
+lc.trim()
+lc.rbin(200)
+
+lc.lightCurveLine.smooth(1.5)
+
+
+###
 
 lc.observeIntervals([250,400,650,800],[45,55,60,65])
 

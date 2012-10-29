@@ -17,8 +17,8 @@ class LightContAndLine():
 		
 		# Generate a lightcurve
 		lightCurve = LightCurve(self.length)
-		#lightCurve.generateWiener()
-		lightCurve.generateOU()
+		lightCurve.generateWiener()
+		#lightCurve.generateOU()
 		
 		# Normalize
 		for i in range(len(lightCurve.flux)):
@@ -56,9 +56,9 @@ class LightContAndLine():
 		self.lightCurveLine.time = list(self.lightCurveLineOrg.time)
 		self.lightCurveLine.flux = list(self.lightCurveLineOrg.flux)
 	
-	def bin(self, nBins):
-		self.lightCurveCont.bin(nBins)
-		self.lightCurveLine.bin(nBins)
+	def rebin(self, nBins):
+		self.lightCurveCont.rebin(nBins)
+		self.lightCurveLine.rebin(nBins)
 	
 	def reprocess(self, nBins, scale, sigma, c, alpha, beta):
 		
@@ -80,8 +80,7 @@ class LightContAndLine():
 		
 		self.trim()
 		
-		self.lightCurveCont.bin(nBins)
-		self.lightCurveLine.bin(nBins)
+		self.rebin(nBins)
 		
 		self.lightCurveLine.scale(scale)
 		self.lightCurveLine.smooth(sigma)
@@ -178,14 +177,12 @@ class LightCurve():
 	def __init__(self, length):
 		
 		self.length = length
-		
-		
 	
 	def generateWiener(self):
 		import pyprocess as SP
 		# Generate random walk light curve using pyprocesses.py
-		wienerParams = {"mu":0, "sigma":0.25}
-		wienerInitial = {"startTime":0, "startPosition":0, "endTime":1200, "endPosition": 1 }
+		wienerParams = {"mu":0, "sigma":0.1}
+		wienerInitial = {"startTime":0, "startPosition":0, "endTime":self.length, "endPosition": 0 }
 		Wiener = SP.Wiener_process(wienerParams, wienerInitial)
 		path = Wiener.generate_sample_path(range(self.length))
 		self.time = [x for i,[x,y] in enumerate(path)]
@@ -198,8 +195,8 @@ class LightCurve():
 	def generateOU(self):
 		import pyprocess as SP
 		# Generate random walk light curve using pyprocesses.py
-		OUParams = {"theta":2., "mu":0., "sigma":0.25}
-		OUInitial = {"startTime":0, "startPosition":0, "endTime":1200, "endPosition": 1 }
+		OUParams = {"theta":1., "mu":5., "sigma":1.25}
+		OUInitial = {"startTime":0, "startPosition":0, "endTime":self.length, "endPosition": 0 }
 		OU = SP.OU_process(OUParams, OUInitial)
 		path = OU.generate_sample_path(range(self.length))
 		self.time = [x for i,[x,y] in enumerate(path)]
@@ -239,10 +236,16 @@ class LightCurve():
 		#g = gauss_kern(sigma=len(self.time)/100.)
 		g = gauss_kern(sigma)
 		
-		extraFluxLower = [self.flux[0] for i in range(length)]
-		extraFluxUpper = [self.flux[-1] for i in range(length)]
+		from numpy import asarray
+		extraFluxLower = asarray([self.flux[0] for i in range(length)])
+		extraFluxUpper = asarray([self.flux[-1] for i in range(length)])
 		
-		self.flux = signal.convolve(extraFluxLower+self.flux+extraFluxUpper,g,mode='same')
+		from numpy import concatenate
+		extendedFlux = concatenate((extraFluxLower,self.flux,extraFluxUpper))
+		
+		self.flux = signal.convolve(extendedFlux,g,mode='same')
+		
+		#self.flux = signal.convolve(extraFluxLower+self.flux+extraFluxUpper,g,mode='same')
 		
 		self.flux = self.flux[length:]
 		self.flux = self.flux[:-length]
@@ -258,6 +261,33 @@ class LightCurve():
 			lag = c + alpha*(lightCurveCont.flux[i])**beta
 			self.time[i] += lag
 	
+	def rebin(self, nBins):
+		from rebin import rebin
+		from numpy import asarray
+		
+		# Convert lists to arrays
+		# Since rebin needs bin-edges we have to add an extra point to the time-list
+		# Whatever value is in a bin is then identified to lie between the two bin edges
+		t = self.time
+		tStepSize = t[1]-t[0]
+		t = asarray(t+[max(t)+tStepSize])
+		
+		f = self.flux
+		f = asarray(f)
+		
+		binSize = (max(t)-min(t))/float(nBins)
+		
+		tnewedges = asarray([min(t) + i*binSize for i in range(nBins+1)])
+		
+		self.flux = rebin(t,f,tnewedges)
+		
+		# To get the correct (x,y) values we have to calulate mid-bin positions based on bin edges:
+		from numpy import delete
+		tnewmidbin = delete(tnewedges,-1)
+		tnewmidbin = tnewmidbin + 0.5*binSize
+		
+		self.time = tnewmidbin
+	
 	def bin(self, nBins):
 		binSize = (max(self.time)-min(self.time))/float(nBins)
 		binPositions = [0]*nBins
@@ -272,11 +302,11 @@ class LightCurve():
 			for j in range(len(self.time)):
 				x = self.time[j]
 				y = self.flux[j]
-				if i < nBins-1:
-					if x >= binPositions[i]-0.5*binSize and x < binPositions[i]+0.5*binSize:
+				if i == nBins-1:
+					if x >= binPositions[i]-0.5*binSize and x <= binPositions[i]+0.5*binSize:
 						binValues[i] += y
 				else:
-					if x >= binPositions[i]-0.5*binSize and x <= binPositions[i]+0.5*binSize:
+					if x >= binPositions[i]-0.5*binSize and x < binPositions[i]+0.5*binSize:
 						binValues[i] += y
 		
 		self.time = list(binPositions)
