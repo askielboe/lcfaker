@@ -1,7 +1,11 @@
 # Generate lightCurves
-from FakeLight import LightContAndLine
-lc = LightContAndLine(1000)
-lc.reprocess(200, 1.0, 1.5, 1., 100.0, 0.519)
+import FakeLight
+lc = FakeLight.FakeLight(1000)
+lc.reprocess(200, 1.0, 1.5, 20., 11.0, 0.519)
+lc.lightCurveCont.addNoiseGaussian(10.)
+lc.lightCurveLine.addNoiseGaussian(10.)
+lc.observeIntervals([250,400,500,650,800],[45,55,30,60,65])
+lc.saveToTxt()
 
 ###########################
 from FakeLight import LightContAndLine
@@ -45,7 +49,7 @@ lc.lightCurveLine.smooth(1.5)
 t = lc.lightCurveCont.time
 f = lc.lightCurveCont.flux
 
-###
+###########################
 
 lc.observeIntervals([250,400,500,650,800],[45,55,30,60,65])
 
