@@ -80,3 +80,6 @@ print(par_best)
 javdata_best =  cymod.do_pred(par_best)
 javdata_best.plot(set_pred=True, obs=cy)
 
+# Save chains
+from numpy import savetxt
+savetxt('cymod_flatchain.txt', cymod.flatchain)
