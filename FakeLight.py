@@ -84,11 +84,16 @@ class FakeLight():
 			# Luminosity dependent time-lag
 			self.lightCurveLine.lag_luminosity(self.lightCurveCont, c, alpha, beta)
 			#self.lightCurveCont.bin(nBins)
-			print "Lag corresponding to average luminosity (Continuum) = ", c + alpha * (self.lightCurveCont.getAverageFlux())**beta
-			print "Lag corresponding to average luminosity (Line) = ", c + alpha * (self.lightCurveLine.getAverageFlux())**beta
-			print "Minimum lag = ", c + alpha * (min(self.lightCurveCont.flux))**beta
-			print "Maximum lag = ", c + alpha * (max(self.lightCurveCont.flux))**beta
-			print "Lag difference = ", (c + alpha * (max(self.lightCurveCont.flux))**beta) - (c + alpha * (min(self.lightCurveCont.flux))**beta)
+		
+		minLag = float(c) + float(alpha) * (min(self.lightCurveCont.flux))**float(beta)
+		maxLag = float(c) + float(alpha) * (max(self.lightCurveCont.flux))**float(beta)
+		avgLag = float(c) + float(alpha) * (self.lightCurveCont.getAverageFlux())**float(beta)
+		
+		
+		print "Minimum lag = ", minLag
+		print "Maximum lag = ", maxLag
+		print "Lag difference = ", maxLag - minLag
+		print "Lag corresponding to average luminosity (Continuum) = ", avgLag
 		
 		self.trim()
 		
@@ -97,7 +102,9 @@ class FakeLight():
 		self.lightCurveLine.scale(scale)
 		self.lightCurveLine.smooth(sigma)
 		
-		self.plot()
+		#self.plot()
+		
+		return (minLag,maxLag,avgLag)
 		
 	def plot(self, style='-'):
 		import matplotlib.pyplot as plt
@@ -140,7 +147,7 @@ class FakeLight():
 		self.lightCurveCont.flux = asarray(fluxContObserved)
 		self.lightCurveLine.flux = asarray(fluxLineObserved)
 		
-		self.plot('o')
+		#self.plot('o')
 	
 	def observeRandom(self, nRuns, lengthRun):
 		
@@ -175,11 +182,11 @@ class FakeLight():
 		self.lightCurveCont.flux = ysContObserved
 		self.lightCurveLine.flux = ysLineObserved
 		
-		self.plot('o')
+		#self.plot('o')
 		
-	def saveToTxt(self):
-		self.lightCurveCont.saveToTxt('lc_cont.txt')
-		self.lightCurveLine.saveToTxt('lc_line.txt')
+	def saveToTxt(self,fnamecont="lc_cont.txt",fnameline="lc_line.txt"):
+		self.lightCurveCont.saveToTxt(fnamecont)
+		self.lightCurveLine.saveToTxt(fnameline)
 	
 	def __repr__(self):
 		print "<LightContAndLine(length='%f')" % (self.length)
