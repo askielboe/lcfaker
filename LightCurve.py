@@ -18,7 +18,7 @@ class LightCurve():
 		self.flux = self.path[:,1]
 	
 	def generateWiener(self):
-		import pyprocess as SP
+		import lcfaker.vendor.pyprocess as SP
 		from numpy import asarray
 		# Generate random walk light curve using pyprocesses.py
 		wienerParams = {"mu":0, "sigma":0.1}
@@ -29,7 +29,7 @@ class LightCurve():
 		#self.flux = [y for i,[x,y] in enumerate(path)]
 	
 	def generateOU(self):
-		import pyprocess as SP
+		import lcfaker.vendor.pyprocess as SP
 		from numpy import asarray
 		# Generate random walk light curve using pyprocesses.py
 		OUParams = {"theta":1., "mu":5., "sigma":1.25}
@@ -89,7 +89,7 @@ class LightCurve():
 			self.flux[i] = gauss(self.flux[i],sigma)
 	
 	def rebin(self, nBins):
-		from rebin import rebin
+		from lcfaker.vendor.rebin import rebin
 		from numpy import asarray, append
 		
 		# Since rebin needs bin-edges we have to add an extra point to the time-list
