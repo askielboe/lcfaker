@@ -16,8 +16,8 @@ class FakeLight():
 		# self.beta = beta
 		
 		# Generate a lightcurve
-		from lcfaker import LightCurve
-		self.lightCurve = LightCurve(self.length)
+		from lcfaker import LightCurveMacLeod
+		self.lightCurve = LightCurveMacLeod()
 		
 		# Now done when defining the light curve
 		#lightCurve.generateWiener()
@@ -29,7 +29,7 @@ class FakeLight():
 			#self.lightCurve.flux[i] = self.lightCurve.flux[i] / max(self.lightCurve.flux) * 5. + 5.
 		
 		# Normalize using numpy array
-		self.lightCurve.path[:,1] = (self.lightCurve.path[:,1] / max(abs(self.lightCurve.path[:,1])) + 1.)*5.
+		#self.lightCurve.path[:,1] = (self.lightCurve.path[:,1] / max(abs(self.lightCurve.path[:,1])) + 1.)*5.
 		
 		from copy import copy
 		self.lightCurveCont = copy(self.lightCurve)
@@ -77,18 +77,30 @@ class FakeLight():
 		self.restore()
 		
 		# Reprocess the continuum to produce the line
-		if (beta == 0. and alpha == 0.): ## REDUNDANT!
+		self.lightCurveLine.lag_luminosity(self.lightCurveCont, c, alpha, beta)
+		
+		## REDUNDANT!
+		#if (beta == 0. and alpha == 0.): 
 			# Constant time-lag
-			self.lightCurveLine.lag_const(c)
-		else:
+			#self.lightCurveLine.lag_const(c)
+		#else:
 			# Luminosity dependent time-lag
-			self.lightCurveLine.lag_luminosity(self.lightCurveCont, c, alpha, beta)
+			#self.lightCurveLine.lag_luminosity(self.lightCurveCont, c, alpha, beta)
 			#self.lightCurveCont.bin(nBins)
 		
-		minLag = float(c) + float(alpha) * (min(self.lightCurveCont.flux))**float(beta)
-		maxLag = float(c) + float(alpha) * (max(self.lightCurveCont.flux))**float(beta)
-		avgLag = float(c) + float(alpha) * (self.lightCurveCont.getAverageFlux())**float(beta)
+		#minLag = float(c) + float(alpha) * (min(self.lightCurveCont.flux))**float(beta)
+		#maxLag = float(c) + float(alpha) * (max(self.lightCurveCont.flux))**float(beta)
+		#avgLag = float(c) + float(alpha) * (self.lightCurveCont.getAverageFlux())**float(beta)
 		
+		import numpy as np
+		import lib.physics as phys
+		print(max(self.lightCurveCont.flux))
+		print(phys.mag_to_lum5100(max(self.lightCurveCont.flux)))
+		
+		minLag = phys.radius_from_luminosity_relation(phys.mag_to_lum5100(max(self.lightCurveCont.flux)))
+		print(minLag)
+		maxLag = phys.radius_from_luminosity_relation(phys.mag_to_lum5100(min(self.lightCurveCont.flux)))
+		avgLag = phys.radius_from_luminosity_relation(phys.mag_to_lum5100(np.mean(self.lightCurveCont.flux)))
 		
 		print "Minimum lag = ", minLag
 		print "Maximum lag = ", maxLag

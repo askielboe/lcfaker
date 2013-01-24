@@ -3,41 +3,6 @@ class LightCurve():
 	def __init__(self, length=1000):
 		
 		self.length = length
-		
-		# # Generate Wiener Path
-		# from numpy import asarray
-		# import pyprocess as SP
-		# # Generate random walk light curve using pyprocesses.py
-		# wienerParams = {"mu":0, "sigma":0.1}
-		# wienerInitial = {"startTime":0, "startPosition":0, "endTime":self.length, "endPosition": 0 }
-		# Wiener = SP.Wiener_process(wienerParams, wienerInitial)
-		# self.path = asarray(Wiener.generate_sample_path(range(self.length)))
-		
-		self.path = self.generateWiener()
-		self.time = self.path[:,0]
-		self.flux = self.path[:,1]
-	
-	def generateWiener(self):
-		import lcfaker.vendor.pyprocess as SP
-		from numpy import asarray
-		# Generate random walk light curve using pyprocesses.py
-		wienerParams = {"mu":0, "sigma":0.1}
-		wienerInitial = {"startTime":0, "startPosition":0, "endTime":self.length, "endPosition": 0 }
-		Wiener = SP.Wiener_process(wienerParams, wienerInitial)
-		return asarray(Wiener.generate_sample_path(range(self.length)))
-		#self.time = [x for i,[x,y] in enumerate(path)]
-		#self.flux = [y for i,[x,y] in enumerate(path)]
-	
-	def generateOU(self):
-		import lcfaker.vendor.pyprocess as SP
-		from numpy import asarray
-		# Generate random walk light curve using pyprocesses.py
-		OUParams = {"theta":1., "mu":5., "sigma":1.25}
-		OUInitial = {"startTime":0, "startPosition":0, "endTime":self.length, "endPosition": 0 }
-		OU = SP.OU_process(OUParams, OUInitial)
-		self.path = asarray(OU.generate_sample_path(range(self.length)))
-		#self.time = [x for i,[x,y] in enumerate(path)]
-		#self.flux = [y for i,[x,y] in enumerate(path)]
 	
 	# def regen(self, length):
 	# 	self.path = self.Wiener.generate_sample_path(range(length))
@@ -45,12 +10,12 @@ class LightCurve():
 	# 	self.flux = [y for i,[x,y] in enumerate(self.path)]
 	
 	def smooth(self, sigma=1.5):
+		import numpy as np
 		import scipy.signal as signal
 		
 		length = int(sigma*10)
 		
 		def gauss_kern(sigma=1.5):
-			import numpy as np
 			""" Returns a normalized 1D gauss kernel array for convolutions """
 			x = np.array(range(length))
 			x = x-length/2.
@@ -59,25 +24,28 @@ class LightCurve():
 		
 		g = gauss_kern(sigma)
 		
-		from numpy import asarray
-		extraFluxLower = asarray([self.flux[0] for i in range(length)])
-		extraFluxUpper = asarray([self.flux[-1] for i in range(length)])
+		# To convolve close to boundaries we need to extrapolate beyond the boundaries
+		# Constant extrapolation using only the values at the boundaries
+		extraFluxLower = np.asarray([self.flux[0] for i in range(length)])
+		extraFluxUpper = np.asarray([self.flux[-1] for i in range(length)])		
+		extendedFlux = np.concatenate((extraFluxLower,self.flux,extraFluxUpper))
 		
-		from numpy import concatenate
-		extendedFlux = concatenate((extraFluxLower,self.flux,extraFluxUpper))
-		
-		self.flux = asarray(signal.convolve(extendedFlux,g,mode='same'))
+		# Smooth light curve using numpy signal convolve and the gaussian kernel
+		self.flux = np.asarray(signal.convolve(extendedFlux,g,mode='same'))
 		self.flux = self.flux[length:]
 		self.flux = self.flux[:-length]
-		
 	
 	def lag_const(self, lag_const):
 		self.time = self.time + lag_const
 		print "Running lag_const.."
 	
 	def lag_luminosity(self, lightCurveCont, c, alpha, beta):
+		import lib.physics as phys
 		print "Running lag_luminosity.."
-		self.time = self.time + float(c) + float(alpha)*lightCurveCont.flux**float(beta)
+		
+		self.time = self.time + phys.radius_from_luminosity_relation(phys.mag_to_lum5100(lightCurveCont.flux))
+		
+		#self.time = self.time + float(c) + float(alpha)*lightCurveCont.flux**float(beta)
 		
 		# Sort time array
 		self.time.sort()
@@ -151,3 +119,95 @@ class LightCurve():
 		from numpy import savetxt, transpose
 		errorBars = 1./float(signalToNoise)*self.flux
 		savetxt(outFileName, transpose((self.time, self.flux, errorBars)))
+
+class LightCurveSP(LightCurve):
+	def __init__(self, length=1000):
+		self.length = length
+		self.path = self.generateWiener()
+		self.time = self.path[:,0]
+		self.flux = self.path[:,1]
+	
+	def generateWiener(self):
+		import lcfaker.vendor.pyprocess as SP
+		from numpy import asarray
+		# Generate random walk light curve using pyprocesses.py
+		wienerParams = {"mu":0, "sigma":0.1}
+		wienerInitial = {"startTime":0, "startPosition":0, "endTime":self.length, "endPosition": 0 }
+		Wiener = SP.Wiener_process(wienerParams, wienerInitial)
+		return asarray(Wiener.generate_sample_path(range(self.length)))
+		#self.time = [x for i,[x,y] in enumerate(path)]
+		#self.flux = [y for i,[x,y] in enumerate(path)]
+	
+	def generateOU(self):
+		import lcfaker.vendor.pyprocess as SP
+		from numpy import asarray
+		# Generate random walk light curve using pyprocesses.py
+		OUParams = {"theta":1., "mu":5., "sigma":1.25}
+		OUInitial = {"startTime":0, "startPosition":0, "endTime":self.length, "endPosition": 0 }
+		OU = SP.OU_process(OUParams, OUInitial)
+		self.path = asarray(OU.generate_sample_path(range(self.length)))
+		#self.time = [x for i,[x,y] in enumerate(path)]
+		#self.flux = [y for i,[x,y] in enumerate(path)]
+
+class LightCurveMacLeod(LightCurve):
+	path = [[],[]]
+	time = []
+	flux = []
+	
+	def __init__(self, mu = -23.0, mag = -23.0, mass = 1e9, lambdarf = 5100.0, z = 0.0):
+		#self.length = length
+		#self.path = self.generateMacLeod(-23.0)
+		#self.time = []
+		#self.flux = []
+		
+		self.N = 1000
+		self.tmax = 3650.
+		
+		self.mu = mu
+		self.mag = mag
+		self.mass = mass
+		self.lambdarf = lambdarf
+		self.z = z
+		
+		self.sf, self.tau = self.calcSFandTau()
+		
+		self.generateMacLeod()
+	
+	def calcSFandTau(self):
+		import numpy as np
+		# Relation from MacLeod et al. 2010 eq. 7
+		# Parameters from MacLeod et al. 2010 Table 1
+		A = -0.51
+		B = -0.479
+		C = 0.131
+		D = 0.18
+		E = 0.0
+	
+		logsf = A \
+			+ B * np.log(self.lambdarf/4000.) \
+			+ C * (self.mag + 23.) \
+			+ D * np.log(self.mass/1e9) \
+			+ E * np.log(1 + self.z)
+	
+		sf = np.exp(logsf)
+	
+		A = 2.4
+		B = 0.17
+		C = 0.03
+		D = 0.21
+		E = 0.0
+	
+		logtau = A \
+			+ B * np.log(self.lambdarf/4000.) \
+			+ C * (self.mag + 23) \
+			+ D * np.log(self.mass/1e9) \
+			+ E * np.log(1 + self.z)
+	
+		tau = np.exp(logtau)
+	
+		return sf,tau
+	
+	def generateMacLeod(self):
+		from lib.ouprocess import OUprocess
+		self.time, self.flux = OUprocess(self.sf, self.tau, self.mu, self.N, self.tmax)
+		self.path = [self.time,self.flux]
