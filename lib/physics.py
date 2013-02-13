@@ -4,11 +4,11 @@ def mag_to_lum5100(M):
 	Lsun = 3.846e26
 	#M = -2.5*np.log(L/Lsun) + Msun
 	#L = 10.0**(0.4*(Msun-M))*Lsun
-	FudgeFactor = 100000
+	FudgeFactor = 1000000
 	L = 10.0**(0.4*(Msun-M))*Lsun*FudgeFactor
 	return L
 
-def radius_from_luminosity_relation(L):
+def r_from_l(L):
 	import numpy as np
 	# Radius-luminosity relation from Bentz et al.
 	K = -21.3 # + 2.9 - 2.8
