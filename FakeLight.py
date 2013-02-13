@@ -36,22 +36,22 @@ class FakeLight():
 		self.lightCurveLine.lag_luminosity(self.lightCurveCont, c, alpha, beta)
 		
 		import numpy as np
-		import lib.physics as phys
+		import lib.units as units
 		# print(max(self.lightCurveCont.flux))
-		# print(phys.mag_to_lum5100(max(self.lightCurveCont.flux)))
+		# print(units.mag_to_lum5100(max(self.lightCurveCont.flux)))
 		# 
-		# minLag = phys.r_from_l(phys.mag_to_lum5100(max(self.lightCurveCont.flux)))
-		# maxLag = phys.r_from_l(phys.mag_to_lum5100(min(self.lightCurveCont.flux)))
-		# avgLag = phys.r_from_l(phys.mag_to_lum5100(np.mean(self.lightCurveCont.flux)))
+		# minLag = units.r_from_l(units.mag_to_lum5100(max(self.lightCurveCont.flux)))
+		# maxLag = units.r_from_l(units.mag_to_lum5100(min(self.lightCurveCont.flux)))
+		# avgLag = units.r_from_l(units.mag_to_lum5100(np.mean(self.lightCurveCont.flux)))
 		# 
 		# print "Minimum lag = ", minLag
 		# print "Maximum lag = ", maxLag
 		# print "Lag difference = ", maxLag - minLag
 		# print "Lag corresponding to average luminosity (Continuum) = ", avgLag
 		
-		
-		
 		self.rebin(nBins)
+		
+		self.trim()
 		
 		self.lightCurveLine.scale(scale)
 		self.lightCurveLine.smooth(sigma)

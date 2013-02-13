@@ -39,23 +39,23 @@ class LightCurve():
 		print "Running lag_luminosity.."
 		
 		import numpy as np
-		import lib.physics as phys
+		import lib.units as units
 		
 		# Convert apparant flux to absolute flux before calculating the lag
 		absoluteFlux = lightCurveCont.flux - self.mu + self.mag
 		print 'mean(absoluteFlux)', np.mean(absoluteFlux)
 		
 		# Calculate timelag based on radius-luminosity relationship
-		timelag = phys.r_from_l(phys.mag_to_lum5100(absoluteFlux))
+		timelag = units.r_from_l(units.mag_to_lum5100(absoluteFlux))
 		self.time = self.time + timelag
 		
 		# # #
 		# Write some output
-		print "Average luminosity: ", np.mean(phys.mag_to_lum5100(absoluteFlux))
+		print "Average luminosity: ", np.mean(units.mag_to_lum5100(absoluteFlux))
 		
-		minLag = phys.r_from_l(phys.mag_to_lum5100(max(absoluteFlux)))
-		maxLag = phys.r_from_l(phys.mag_to_lum5100(min(absoluteFlux)))
-		avgLag = phys.r_from_l(phys.mag_to_lum5100(np.mean(absoluteFlux)))
+		minLag = units.r_from_l(units.mag_to_lum5100(max(absoluteFlux)))
+		maxLag = units.r_from_l(units.mag_to_lum5100(min(absoluteFlux)))
+		avgLag = units.r_from_l(units.mag_to_lum5100(np.mean(absoluteFlux)))
 		
 		print "Minimum lag = ", minLag
 		print "Maximum lag = ", maxLag

@@ -15,3 +15,8 @@ def r_from_l(L):
 	alpha = 0.519 # + 0.063 - 0.066
 	R = 10.0**(K) * 10.0**(alpha*np.log10(L))
 	return R
+
+def magi_to_fluxJy(mag):
+	F_i_0 = 4760.0
+	F = F_i_0 * 10.0**(-0.4*mag)
+	return F
