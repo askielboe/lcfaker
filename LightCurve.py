@@ -51,53 +51,43 @@ class LightCurve():
 			sigma = 1./float(signalToNoise)*self.flux[i]
 			self.flux[i] = gauss(self.flux[i],sigma)
 	
-	def rebin(self, nBins):
-		from lcfaker.vendor.rebin import rebin
-		from numpy import asarray, append
-		
-		# Since rebin needs bin-edges we have to add an extra point to the time-list
-		# Whatever value is in a bin is then identified to lie between the two bin edges
-		
-		time = self.time
-		flux = self.flux
-		
-		binSize = (max(time)-min(time))/float(nBins)
-		tEdges = append(time, max(time)+1.0)
-		
-		tEdgesNew = asarray([min(time) + i*binSize for i in range(nBins+1)])
-		
-		self.flux = rebin(tEdges,flux,tEdgesNew)
-		
-		# To get the correct (x,y) values we have to calulate mid-bin positions based on bin edges:
-		from numpy import delete
-		tNewMidBin = delete(tEdgesNew,-1)
-		tNewMidBin = tNewMidBin + 0.5*binSize
-		
-		self.time = tNewMidBin
+	# def rebin(self, nBins):
+	# 	from lcfaker.vendor.rebin import rebin
+	# 	from numpy import asarray, append
+	# 	
+	# 	# Since rebin needs bin-edges we have to add an extra point to the time-list
+	# 	# Whatever value is in a bin is then identified to lie between the two bin edges
+	# 	
+	# 	time = self.time
+	# 	flux = self.flux
+	# 	
+	# 	binSize = (max(time)-min(time))/float(nBins)
+	# 	tEdges = append(time, max(time)+1.0)
+	# 	
+	# 	tEdgesNew = asarray([min(time) + i*binSize for i in range(nBins+1)])
+	# 	
+	# 	self.flux = rebin(tEdges,flux,tEdgesNew)
+	# 	
+	# 	# To get the correct (x,y) values we have to calulate mid-bin positions based on bin edges:
+	# 	from numpy import delete
+	# 	tNewMidBin = delete(tEdgesNew,-1)
+	# 	tNewMidBin = tNewMidBin + 0.5*binSize
+	# 	
+	# 	self.time = tNewMidBin
 	
-	# def bin(self, nBins):
-	# 	binSize = (max(self.time)-min(self.time))/float(nBins)
-	# 	binPositions = [0]*nBins
-	# 	binValues = [0]*nBins
-	# 	
-	# 	# Calculate bin positions
-	# 	for i in range(nBins):
-	# 		binPositions[i] = int(min(self.time)) + i*binSize + 0.5*binSize
-	# 	
-	# 	# Sum y values for each bin
-	# 	for i in range(nBins):
-	# 		for j in range(len(self.time)):
-	# 			x = self.time[j]
-	# 			y = self.flux[j]
-	# 			if i == nBins-1:
-	# 				if x >= binPositions[i]-0.5*binSize and x <= binPositions[i]+0.5*binSize:
-	# 					binValues[i] += y
-	# 			else:
-	# 				if x >= binPositions[i]-0.5*binSize and x < binPositions[i]+0.5*binSize:
-	# 					binValues[i] += y
-	# 	
-	# 	self.time = list(binPositions)
-	# 	self.flux = list(binValues)
+	def rebin(self, shapeNew):
+		# First check is current array is divisible by nBins
+		if (len(self.flux)%shapeNew > 0):
+			print "ERROR: Current number of bins not divisible by new number of bins!"
+			return
+		
+		# Rebin flux
+		M = self.flux.shape[0]
+		m = shapeNew
+		self.flux = self.flux.reshape((m,M/m)).sum(1)
+		
+		# Calculate new time bins
+		self.time = self.time.reshape((m,M/m)).mean(1)
 	
 	def scale(self, scale):
 		self.flux = self.flux * float(scale)
