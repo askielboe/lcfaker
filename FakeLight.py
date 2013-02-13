@@ -6,14 +6,11 @@ class FakeLight():
 	timeLine = np.array([])
 	fluxLine = np.array([])
 	
-	def __init__(self, length=1000):
-		
-		# Input parameters
-		self.length = length
+	def __init__(self, maxDays=1000):
 		
 		# Generate a lightcurve
 		from lcfaker import LightCurveMacLeod
-		self.lightCurve = LightCurveMacLeod()
+		self.lightCurve = LightCurveMacLeod(maxDays = maxDays)
 		
 		from copy import copy
 		self.lightCurveCont = copy(self.lightCurve)
