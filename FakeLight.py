@@ -10,61 +10,16 @@ class FakeLight():
 		
 		# Input parameters
 		self.length = length
-		# self.nBins = nBins
-		# self.scale = scale
-		# self.sigma = sigma
-		# self.alpha = alpha
-		# self.beta = beta
 		
 		# Generate a lightcurve
 		from lcfaker import LightCurveMacLeod
 		self.lightCurve = LightCurveMacLeod()
 		
-		# Now done when defining the light curve
-		#lightCurve.generateWiener()
-		#lightCurve.generateOU()
-		
-		# Normalize
-		
-		# for i in range(len(self.lightCurve.flux)):
-			#self.lightCurve.flux[i] = self.lightCurve.flux[i] / max(self.lightCurve.flux) * 5. + 5.
-		
-		# Normalize using numpy array
-		#self.lightCurve.path[:,1] = (self.lightCurve.path[:,1] / max(abs(self.lightCurve.path[:,1])) + 1.)*5.
-		
 		from copy import copy
 		self.lightCurveCont = copy(self.lightCurve)
 		self.lightCurveLine = copy(self.lightCurve)
 		
-		# Extract (time,flux) values into two seperate list pairs
-		# self.timeCont = list(lightCurve.time)
-		# self.fluxCont = list(lightCurve.flux)
-		# self.timeLine = list(lightCurve.time)
-		# self.fluxLine = list(lightCurve.flux)
-		
-		# # Make new lightCurves for Cont, Line and original for storing the original lightcurve
-		# self.lightCurveCont = LightCurve(self.length)
-		# self.lightCurveContOrg = LightCurve(self.length)
-		# self.lightCurveLine = LightCurve(self.length)
-		# self.lightCurveLineOrg = LightCurve(self.length)
-		# 
-		# # Save working lightcurves
-		# self.lightCurveCont.path = asarray(list(lightCurve.path))
-		# self.lightCurveLine.path = asarray(list(lightCurve.path))
-		# 
-		# # Save originals for possible restore
-		# self.lightCurveContOrg.time = list(self.lightCurveCont.time)
-		# self.lightCurveContOrg.flux = list(self.lightCurveCont.flux)
-		# self.lightCurveLineOrg.time = list(self.lightCurveLine.time)
-		# self.lightCurveLineOrg.flux = list(self.lightCurveLine.flux)
-		
 	def restore(self):
-		# self.lightCurveCont.time = list(self.lightCurveContOrg.time)
-		# self.lightCurveCont.flux = list(self.lightCurveContOrg.flux)
-		# 
-		# self.lightCurveLine.time = list(self.lightCurveLineOrg.time)
-		# self.lightCurveLine.flux = list(self.lightCurveLineOrg.flux)
-		
 		from copy import copy
 		self.lightCurveCont = copy(self.lightCurve)
 		self.lightCurveLine = copy(self.lightCurve)
@@ -80,42 +35,26 @@ class FakeLight():
 		# Reprocess the continuum to produce the line
 		self.lightCurveLine.lag_luminosity(self.lightCurveCont, c, alpha, beta)
 		
-		## REDUNDANT!
-		#if (beta == 0. and alpha == 0.): 
-			# Constant time-lag
-			#self.lightCurveLine.lag_const(c)
-		#else:
-			# Luminosity dependent time-lag
-			#self.lightCurveLine.lag_luminosity(self.lightCurveCont, c, alpha, beta)
-			#self.lightCurveCont.bin(nBins)
-		
-		#minLag = float(c) + float(alpha) * (min(self.lightCurveCont.flux))**float(beta)
-		#maxLag = float(c) + float(alpha) * (max(self.lightCurveCont.flux))**float(beta)
-		#avgLag = float(c) + float(alpha) * (self.lightCurveCont.getAverageFlux())**float(beta)
-		
 		import numpy as np
 		import lib.physics as phys
-		print(max(self.lightCurveCont.flux))
-		print(phys.mag_to_lum5100(max(self.lightCurveCont.flux)))
+		# print(max(self.lightCurveCont.flux))
+		# print(phys.mag_to_lum5100(max(self.lightCurveCont.flux)))
+		# 
+		# minLag = phys.r_from_l(phys.mag_to_lum5100(max(self.lightCurveCont.flux)))
+		# maxLag = phys.r_from_l(phys.mag_to_lum5100(min(self.lightCurveCont.flux)))
+		# avgLag = phys.r_from_l(phys.mag_to_lum5100(np.mean(self.lightCurveCont.flux)))
+		# 
+		# print "Minimum lag = ", minLag
+		# print "Maximum lag = ", maxLag
+		# print "Lag difference = ", maxLag - minLag
+		# print "Lag corresponding to average luminosity (Continuum) = ", avgLag
 		
-		minLag = phys.radius_from_luminosity_relation(phys.mag_to_lum5100(max(self.lightCurveCont.flux)))
-		print(minLag)
-		maxLag = phys.radius_from_luminosity_relation(phys.mag_to_lum5100(min(self.lightCurveCont.flux)))
-		avgLag = phys.radius_from_luminosity_relation(phys.mag_to_lum5100(np.mean(self.lightCurveCont.flux)))
 		
-		print "Minimum lag = ", minLag
-		print "Maximum lag = ", maxLag
-		print "Lag difference = ", maxLag - minLag
-		print "Lag corresponding to average luminosity (Continuum) = ", avgLag
-		
-		self.trim()
 		
 		self.rebin(nBins)
 		
 		self.lightCurveLine.scale(scale)
 		self.lightCurveLine.smooth(sigma)
-		
-		#self.plot()
 		
 		return (minLag,maxLag,avgLag)
 		
@@ -125,7 +64,6 @@ class FakeLight():
 		plt.plot(self.lightCurveCont.time,self.lightCurveCont.flux, str(style)+'b', label='cont')
 		plt.plot(self.lightCurveLine.time,self.lightCurveLine.flux, str(style)+'r', label='line')
 		plt.legend(frameon=False)
-		#plt.show()
 	
 	def trim(self):
 		# Find differences

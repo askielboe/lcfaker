@@ -4,11 +4,6 @@ class LightCurve():
 		
 		self.length = length
 	
-	# def regen(self, length):
-	# 	self.path = self.Wiener.generate_sample_path(range(length))
-	# 	self.time = [x for i,[x,y] in enumerate(self.path)]
-	# 	self.flux = [y for i,[x,y] in enumerate(self.path)]
-	
 	def smooth(self, sigma=1.5):
 		import numpy as np
 		import scipy.signal as signal
@@ -150,9 +145,6 @@ class LightCurveSP(LightCurve):
 		#self.flux = [y for i,[x,y] in enumerate(path)]
 
 class LightCurveMacLeod(LightCurve):
-	path = [[],[]]
-	time = []
-	flux = []
 	import numpy as np
 	
 	def __init__(self, mu = -23.0, mag = -23.0, mass = 1e9, lambdarf = 5100.0, z = 0.0):
@@ -213,4 +205,3 @@ class LightCurveMacLeod(LightCurve):
 	def generateMacLeod(self):
 		from lib.ouprocess import OUprocess
 		self.time, self.flux = OUprocess(self.sf, self.tau, self.mu, self.N, self.tmax)
-		self.path = [self.time,self.flux]
