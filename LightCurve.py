@@ -35,27 +35,28 @@ class LightCurve():
 		
 		self.time = self.time + lag_const
 	
-	def lag_luminosity(self, lightCurveCont, c, alpha, beta):
+	def lag_luminosity(self):
 		print "Running lag_luminosity.."
 		
 		import numpy as np
 		import lib.units as units
 		
-		# Convert apparant flux to absolute flux before calculating the lag
-		absoluteFlux = lightCurveCont.flux - self.mu + self.mag
-		print 'mean(absoluteFlux)', np.mean(absoluteFlux)
+		# Convert apparant magnitude to absolute magnitude before calculating the lag
+		from copy import copy
+		absoluteMag = copy(self.mag) - self.magApparant + self.magAbsolute
+		print 'mean(absoluteMag)', np.mean(absoluteMag)
 		
 		# Calculate timelag based on radius-luminosity relationship
-		timelag = units.r_from_l(units.mag_to_lum5100(absoluteFlux))
+		timelag = units.r_from_l(units.mag_to_lum5100(absoluteMag))
 		self.time = self.time + timelag
 		
 		# # #
 		# Write some output
-		print "Average luminosity: ", np.mean(units.mag_to_lum5100(absoluteFlux))
+		print "Average luminosity: ", np.mean(units.mag_to_lum5100(absoluteMag))
 		
-		minLag = units.r_from_l(units.mag_to_lum5100(max(absoluteFlux)))
-		maxLag = units.r_from_l(units.mag_to_lum5100(min(absoluteFlux)))
-		avgLag = units.r_from_l(units.mag_to_lum5100(np.mean(absoluteFlux)))
+		minLag = units.r_from_l(units.mag_to_lum5100(max(absoluteMag)))
+		maxLag = units.r_from_l(units.mag_to_lum5100(min(absoluteMag)))
+		avgLag = units.r_from_l(units.mag_to_lum5100(np.mean(absoluteMag)))
 		
 		print "Minimum lag = ", minLag
 		print "Maximum lag = ", maxLag
@@ -98,9 +99,10 @@ class LightCurve():
 		if (units == 'Jy'):
 			import lib.units as units
 			y = units.magi_to_fluxJy(self.flux)
+			y = self.flux
 			plt.ylabel('flux [Jy]')
 		elif (units == 'Mag'):
-			y = self.flux
+			y = self.mag
 			plt.ylabel('flux [m_i]')
 		else:
 			print "ERROR: Unknown unit"
@@ -146,6 +148,7 @@ class LightCurveMacLeod(LightCurve):
 	
 	time = np.array([])
 	flux = np.array([])
+	mag = np.array([])
 	
 	def __init__(self, \
 		nDays = 1000, maxDays = 1000, \
@@ -203,5 +206,9 @@ class LightCurveMacLeod(LightCurve):
 	
 	def generateMacLeod(self):
 		from lib.ouprocess import OUprocess
-		self.time, self.flux = OUprocess(self.nDays, self.maxDays, self.magApparant, self.sf, self.tau)
+		self.time, self.mag = OUprocess(self.nDays, self.maxDays, self.magApparant, self.sf, self.tau)
+		
+		# Calculate flux
+		from lib.units import magi_to_fluxJy
+		self.flux = magi_to_fluxJy(self.mag)
 
