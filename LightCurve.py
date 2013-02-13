@@ -153,8 +153,11 @@ class LightCurveMacLeod(LightCurve):
 	path = [[],[]]
 	time = []
 	flux = []
+	import numpy as np
 	
 	def __init__(self, mu = -23.0, mag = -23.0, mass = 1e9, lambdarf = 5100.0, z = 0.0):
+	time = np.array([])
+	flux = np.array([])
 		#self.length = length
 		#self.path = self.generateMacLeod(-23.0)
 		#self.time = []

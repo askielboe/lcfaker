@@ -1,9 +1,10 @@
 class FakeLight():
+	import numpy as np
 	
-	timeCont = []
-	fluxCont = []
-	timeLine = []
-	fluxLine = []
+	timeCont = np.array([])
+	fluxCont = np.array([])
+	timeLine = np.array([])
+	fluxLine = np.array([])
 	
 	def __init__(self, length=1000):
 		
