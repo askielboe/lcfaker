@@ -28,15 +28,15 @@ class FakeLight():
 		self.lightCurveCont.rebin(nBins)
 		self.lightCurveLine.rebin(nBins)
 	
-	def reprocess(self, nBins, scale, sigma, c, alpha, beta):
+	def reprocess(self, nBins, scale, sigma):
 		
 		self.restore()
 		
 		# Reprocess the continuum to produce the line
-		self.lightCurveLine.lag_luminosity(self.lightCurveCont, c, alpha, beta)
+		self.lightCurveLine.lag_luminosity()
 		
-		import numpy as np
-		import lib.units as units
+		#import numpy as np
+		#import lib.units as units
 		# print(max(self.lightCurveCont.flux))
 		# print(units.mag_to_lum5100(max(self.lightCurveCont.flux)))
 		# 
@@ -56,7 +56,7 @@ class FakeLight():
 		self.lightCurveLine.scale(scale)
 		self.lightCurveLine.smooth(sigma)
 		
-		return (minLag,maxLag,avgLag)
+		#return (minLag,maxLag,avgLag)
 		
 	def plot(self, figure=1, marker='-'):
 		self.lightCurveCont.plot(figure=figure, color='b', label='cont', marker=marker)
