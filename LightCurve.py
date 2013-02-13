@@ -35,10 +35,28 @@ class LightCurve():
 		print "Running lag_const.."
 	
 	def lag_luminosity(self, lightCurveCont, c, alpha, beta):
+		import numpy as np
 		import lib.physics as phys
 		print "Running lag_luminosity.."
 		
-		self.time = self.time + phys.radius_from_luminosity_relation(phys.mag_to_lum5100(lightCurveCont.flux))
+		# Convert apparant flux to absolute flux before calculating the lag
+		absoluteFlux = lightCurveCont.flux - self.mu + self.mag
+		print('mean(absoluteFlux)',np.mean(absoluteFlux))
+		# Calculate timelag based on radius-luminosity relationship
+		timelag = phys.r_from_l(phys.mag_to_lum5100(absoluteFlux))
+		self.time = self.time + timelag
+		
+		import numpy as np
+		print("Average luminosity:", np.mean(phys.mag_to_lum5100(absoluteFlux)))
+		
+		minLag = phys.r_from_l(phys.mag_to_lum5100(max(absoluteFlux)))
+		maxLag = phys.r_from_l(phys.mag_to_lum5100(min(absoluteFlux)))
+		avgLag = phys.r_from_l(phys.mag_to_lum5100(np.mean(absoluteFlux)))
+		
+		print "Minimum lag = ", minLag
+		print "Maximum lag = ", maxLag
+		print "Lag difference = ", maxLag - minLag
+		print "Lag corresponding to average luminosity (Continuum) = ", avgLag
 		
 		#self.time = self.time + float(c) + float(alpha)*lightCurveCont.flux**float(beta)
 		
@@ -137,16 +155,17 @@ class LightCurveSP(LightCurve):
 class LightCurveMacLeod(LightCurve):
 	import numpy as np
 	
-	def __init__(self, mu = -23.0, mag = -23.0, mass = 1e9, lambdarf = 5100.0, z = 0.0):
 	time = np.array([])
 	flux = np.array([])
+	
+	def __init__(self, mu = 15, mag = -24.0, mass = 1e9, lambdarf = 5100.0, z = 0.0):
 		#self.length = length
 		#self.path = self.generateMacLeod(-23.0)
 		#self.time = []
 		#self.flux = []
 		
 		self.N = 1000
-		self.tmax = 3650.
+		self.tmax = 3000.
 		
 		self.mu = mu
 		self.mag = mag
@@ -195,3 +214,4 @@ class LightCurveMacLeod(LightCurve):
 	def generateMacLeod(self):
 		from lib.ouprocess import OUprocess
 		self.time, self.flux = OUprocess(self.sf, self.tau, self.mu, self.N, self.tmax)
+
