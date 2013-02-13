@@ -58,14 +58,13 @@ class FakeLight():
 		
 		return (minLag,maxLag,avgLag)
 		
-	def plot(self, style='-'):
-		import matplotlib.pyplot as plt
-		plt.figure()
-		plt.plot(self.lightCurveCont.time,self.lightCurveCont.flux, str(style)+'b', label='cont')
-		plt.plot(self.lightCurveLine.time,self.lightCurveLine.flux, str(style)+'r', label='line')
-		plt.legend(frameon=False)
+	def plot(self, figure=1, marker='-'):
+		self.lightCurveCont.plot(figure=figure, color='b', label='cont', marker=marker)
+		self.lightCurveLine.plot(figure=figure, color='r', label='line', marker=marker)
 	
 	def trim(self):
+		# Corps the lightcurves to only include the overlapping regions
+		
 		# Find differences
 		lowerDiff = int(min(self.lightCurveLine.time) - min(self.lightCurveCont.time))
 		upperDiff = int(max(self.lightCurveLine.time) - max(self.lightCurveCont.time))

@@ -90,15 +90,14 @@ class LightCurve():
 	def scale(self, scale):
 		self.flux = self.flux * float(scale)
 	
-	def plot(self, units='Jy'):
+	def plot(self, units='Jy', figure=1, color='b', label='', marker='-'):
 		import matplotlib.pyplot as plt
-		plt.figure()
+		plt.figure(figure)
 		plt.title('LightCurve')
 		plt.xlabel('time [days]')
 		
 		if (units == 'Jy'):
 			import lib.units as units
-			y = units.magi_to_fluxJy(self.flux)
 			y = self.flux
 			plt.ylabel('flux [Jy]')
 		elif (units == 'Mag'):
@@ -108,7 +107,8 @@ class LightCurve():
 			print "ERROR: Unknown unit"
 			return
 		
-		plt.plot(self.time,y)
+		plt.plot(self.time, y, marker+color, label=label)
+		plt.legend(frameon=False)
 	
 	def getAverageFlux(self):
 		return sum(self.flux)/len(self.flux)
@@ -153,7 +153,10 @@ class LightCurveMacLeod(LightCurve):
 	def __init__(self, \
 		nDays = 1000, maxDays = 1000, \
 		magApparant = 15, magAbsolute = -24.0, \
-		mass = 1e9, lambdarf = 5100.0, z = 0.0):
+		mass = 1.0e9, lambdarf = 5100.0, \
+		z = 0.0, dist = 1.0e6):
+		
+		import numpy as np
 		
 		self.nDays = nDays
 		self.maxDays = maxDays
@@ -162,6 +165,9 @@ class LightCurveMacLeod(LightCurve):
 		self.mass = mass
 		self.lambdarf = lambdarf
 		self.z = z
+		self.dist = dist
+		
+		self.magApparant = 5.0 * np.log10(dist) - 5.0 + self.magAbsolute
 		
 		# Get random walk parameters from physical parameters
 		self.sf, self.tau = self.calcSFandTau()
