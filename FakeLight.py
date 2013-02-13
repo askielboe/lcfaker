@@ -62,18 +62,23 @@ class FakeLight():
 	def trim(self):
 		# Corps the lightcurves to only include the overlapping regions
 		
-		# Find differences
-		lowerDiff = int(min(self.lightCurveLine.time) - min(self.lightCurveCont.time))
-		upperDiff = int(max(self.lightCurveLine.time) - max(self.lightCurveCont.time))
+		# Create mask of points in common betweent he lightcurves
+		maskCont = self.lightCurveCont.time >= min(self.lightCurveLine.time)
+		maskLine = self.lightCurveLine.time <= max(self.lightCurveCont.time)
 		
-		# Remove first lowerDiff elements from lightCurveCont
-		self.lightCurveCont.time = self.lightCurveCont.time[lowerDiff:]
-		self.lightCurveCont.flux = self.lightCurveCont.flux[lowerDiff:]
+		# 
+		self.lightCurveCont.time = self.lightCurveCont.time[maskCont]
+		self.lightCurveCont.mag = self.lightCurveCont.mag[maskCont]
+		self.lightCurveCont.flux = self.lightCurveCont.flux[maskCont]
 		
-		# Remove last upperDiff elements from lightCurveLine
-		self.lightCurveLine.time = self.lightCurveLine.time[:len(self.lightCurveLine.time)-upperDiff]
-		self.lightCurveLine.flux = self.lightCurveLine.flux[:len(self.lightCurveLine.flux)-upperDiff]
+		self.lightCurveLine.time = self.lightCurveLine.time[maskLine]
+		self.lightCurveLine.mag = self.lightCurveLine.mag[maskLine]
+		self.lightCurveLine.flux = self.lightCurveLine.flux[maskLine]
 		
+		# Renormalize time
+		self.lightCurveCont.time -= min(self.lightCurveCont.time)
+		self.lightCurveLine.time -= min(self.lightCurveLine.time)
+	
 	def observeIntervals(self, times, widths):
 		
 		timeObserved = []
