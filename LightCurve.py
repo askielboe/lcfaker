@@ -89,14 +89,24 @@ class LightCurve():
 	def scale(self, scale):
 		self.flux = self.flux * float(scale)
 	
-	def plot(self):
-		try:
-			import matplotlib.pyplot as plt
-			plt.figure()
-			plt.plot(self.time,self.flux)
-		except AttributeError:
-			print "ERROR: Light curve contains no content."
-			print "Use LightCurveMacLeod() to generate data before plotting.."
+	def plot(self, units='Jy'):
+		import matplotlib.pyplot as plt
+		plt.figure()
+		plt.title('LightCurve')
+		plt.xlabel('time [days]')
+		
+		if (units == 'Jy'):
+			import lib.units as units
+			y = units.magi_to_fluxJy(self.flux)
+			plt.ylabel('flux [Jy]')
+		elif (units == 'Mag'):
+			y = self.flux
+			plt.ylabel('flux [m_i]')
+		else:
+			print "ERROR: Unknown unit"
+			return
+		
+		plt.plot(self.time,y)
 	
 	def getAverageFlux(self):
 		return sum(self.flux)/len(self.flux)
