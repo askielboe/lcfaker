@@ -1,9 +1,9 @@
-def OUprocess(sf, tau, mu, N, tmax):
+def OUprocess(N, Nmax, mu, sf, tau):
 	import numpy as np
 	# Adapted from eq. 5 from MacLeod et al. 2010
 	
-	dt = tmax / N
-	t = np.arange(0.0,tmax,dt)
+	dt = Nmax / N
+	t = np.arange(0.0,Nmax,dt)
 	
 	exp = np.exp(-dt/tau)
 	norm = mu * (1-exp)
@@ -16,4 +16,4 @@ def OUprocess(sf, tau, mu, N, tmax):
 		E = exp * X[i] + norm
 		X[i+1] = np.random.normal(E,var)
 	
-	return t, X
+	return (t, X)

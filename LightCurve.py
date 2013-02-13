@@ -31,23 +31,27 @@ class LightCurve():
 		self.flux = self.flux[:-length]
 	
 	def lag_const(self, lag_const):
-		self.time = self.time + lag_const
 		print "Running lag_const.."
+		
+		self.time = self.time + lag_const
 	
 	def lag_luminosity(self, lightCurveCont, c, alpha, beta):
+		print "Running lag_luminosity.."
+		
 		import numpy as np
 		import lib.physics as phys
-		print "Running lag_luminosity.."
 		
 		# Convert apparant flux to absolute flux before calculating the lag
 		absoluteFlux = lightCurveCont.flux - self.mu + self.mag
-		print('mean(absoluteFlux)',np.mean(absoluteFlux))
+		print 'mean(absoluteFlux)', np.mean(absoluteFlux)
+		
 		# Calculate timelag based on radius-luminosity relationship
 		timelag = phys.r_from_l(phys.mag_to_lum5100(absoluteFlux))
 		self.time = self.time + timelag
 		
-		import numpy as np
-		print("Average luminosity:", np.mean(phys.mag_to_lum5100(absoluteFlux)))
+		# # #
+		# Write some output
+		print "Average luminosity: ", np.mean(phys.mag_to_lum5100(absoluteFlux))
 		
 		minLag = phys.r_from_l(phys.mag_to_lum5100(max(absoluteFlux)))
 		maxLag = phys.r_from_l(phys.mag_to_lum5100(min(absoluteFlux)))
@@ -57,8 +61,7 @@ class LightCurve():
 		print "Maximum lag = ", maxLag
 		print "Lag difference = ", maxLag - minLag
 		print "Lag corresponding to average luminosity (Continuum) = ", avgLag
-		
-		#self.time = self.time + float(c) + float(alpha)*lightCurveCont.flux**float(beta)
+		# # #
 		
 		# Sort time array
 		self.time.sort()
@@ -68,30 +71,6 @@ class LightCurve():
 		for i in range(len(self.flux)):
 			sigma = 1./float(signalToNoise)*self.flux[i]
 			self.flux[i] = gauss(self.flux[i],sigma)
-	
-	# def rebin(self, nBins):
-	# 	from lcfaker.vendor.rebin import rebin
-	# 	from numpy import asarray, append
-	# 	
-	# 	# Since rebin needs bin-edges we have to add an extra point to the time-list
-	# 	# Whatever value is in a bin is then identified to lie between the two bin edges
-	# 	
-	# 	time = self.time
-	# 	flux = self.flux
-	# 	
-	# 	binSize = (max(time)-min(time))/float(nBins)
-	# 	tEdges = append(time, max(time)+1.0)
-	# 	
-	# 	tEdgesNew = asarray([min(time) + i*binSize for i in range(nBins+1)])
-	# 	
-	# 	self.flux = rebin(tEdges,flux,tEdgesNew)
-	# 	
-	# 	# To get the correct (x,y) values we have to calulate mid-bin positions based on bin edges:
-	# 	from numpy import delete
-	# 	tNewMidBin = delete(tEdgesNew,-1)
-	# 	tNewMidBin = tNewMidBin + 0.5*binSize
-	# 	
-	# 	self.time = tNewMidBin
 	
 	def rebin(self, shapeNew):
 		# First check is current array is divisible by nBins
@@ -111,9 +90,13 @@ class LightCurve():
 		self.flux = self.flux * float(scale)
 	
 	def plot(self):
-		import matplotlib.pyplot as plt
-		plt.figure()
-		plt.plot(self.time,self.flux)
+		try:
+			import matplotlib.pyplot as plt
+			plt.figure()
+			plt.plot(self.time,self.flux)
+		except AttributeError:
+			print "ERROR: Light curve contains no content."
+			print "Use LightCurveMacLeod() to generate data before plotting.."
 	
 	def getAverageFlux(self):
 		return sum(self.flux)/len(self.flux)
@@ -138,8 +121,6 @@ class LightCurveSP(LightCurve):
 		wienerInitial = {"startTime":0, "startPosition":0, "endTime":self.length, "endPosition": 0 }
 		Wiener = SP.Wiener_process(wienerParams, wienerInitial)
 		return asarray(Wiener.generate_sample_path(range(self.length)))
-		#self.time = [x for i,[x,y] in enumerate(path)]
-		#self.flux = [y for i,[x,y] in enumerate(path)]
 	
 	def generateOU(self):
 		import lcfaker.vendor.pyprocess as SP
@@ -149,8 +130,6 @@ class LightCurveSP(LightCurve):
 		OUInitial = {"startTime":0, "startPosition":0, "endTime":self.length, "endPosition": 0 }
 		OU = SP.OU_process(OUParams, OUInitial)
 		self.path = asarray(OU.generate_sample_path(range(self.length)))
-		#self.time = [x for i,[x,y] in enumerate(path)]
-		#self.flux = [y for i,[x,y] in enumerate(path)]
 
 class LightCurveMacLeod(LightCurve):
 	import numpy as np
@@ -158,27 +137,28 @@ class LightCurveMacLeod(LightCurve):
 	time = np.array([])
 	flux = np.array([])
 	
-	def __init__(self, mu = 15, mag = -24.0, mass = 1e9, lambdarf = 5100.0, z = 0.0):
-		#self.length = length
-		#self.path = self.generateMacLeod(-23.0)
-		#self.time = []
-		#self.flux = []
+	def __init__(self, \
+		nDays = 1000, maxDays = 1000, \
+		magApparant = 15, magAbsolute = -24.0, \
+		mass = 1e9, lambdarf = 5100.0, z = 0.0):
 		
-		self.N = 1000
-		self.tmax = 3000.
-		
-		self.mu = mu
-		self.mag = mag
+		self.nDays = nDays
+		self.maxDays = maxDays
+		self.magApparant = magApparant
+		self.magAbsolute = magAbsolute
 		self.mass = mass
 		self.lambdarf = lambdarf
 		self.z = z
 		
+		# Get random walk parameters from physical parameters
 		self.sf, self.tau = self.calcSFandTau()
 		
+		# Generate lightcurve based on damped random walk using equations from MacLeod et al.
 		self.generateMacLeod()
 	
 	def calcSFandTau(self):
 		import numpy as np
+		
 		# Relation from MacLeod et al. 2010 eq. 7
 		# Parameters from MacLeod et al. 2010 Table 1
 		A = -0.51
@@ -189,7 +169,7 @@ class LightCurveMacLeod(LightCurve):
 	
 		logsf = A \
 			+ B * np.log(self.lambdarf/4000.) \
-			+ C * (self.mag + 23.) \
+			+ C * (self.magAbsolute + 23.) \
 			+ D * np.log(self.mass/1e9) \
 			+ E * np.log(1 + self.z)
 	
@@ -203,15 +183,15 @@ class LightCurveMacLeod(LightCurve):
 	
 		logtau = A \
 			+ B * np.log(self.lambdarf/4000.) \
-			+ C * (self.mag + 23) \
+			+ C * (self.magAbsolute + 23.) \
 			+ D * np.log(self.mass/1e9) \
 			+ E * np.log(1 + self.z)
 	
 		tau = np.exp(logtau)
 	
-		return sf,tau
+		return (sf,tau)
 	
 	def generateMacLeod(self):
 		from lib.ouprocess import OUprocess
-		self.time, self.flux = OUprocess(self.sf, self.tau, self.mu, self.N, self.tmax)
+		self.time, self.flux = OUprocess(self.nDays, self.maxDays, self.magApparant, self.sf, self.tau)
 
