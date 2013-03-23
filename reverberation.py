@@ -102,6 +102,10 @@ class Reverberation():
         self.lcLine.time = self.lcLine.time[maskLine]
         self.lcLine.flux = self.lcLine.flux[maskLine]
 
+        if len(self.lcLine.ferr) > 0:
+            self.lcCont.ferr = self.lcCont.ferr[maskCont]
+            self.lcLine.ferr = self.lcLine.ferr[maskLine]
+
         # Renormalize time
         self.lcCont.time -= min(self.lcCont.time)
         self.lcLine.time -= min(self.lcLine.time)
