@@ -70,39 +70,39 @@ class LightCurve():
     #     Input: Continuum lightcurve
     #     Effect: self will be modified to a lagged lightcurve.
     #     Output: None
-    # 
+    #
     #     TODO: Right now lag is based on R-L relation from Bentz et al.
     #     It only works if the light curve is generated from the MacLeod method/function.
     #     It _should_ work in general as a stand alone-method.
     #     """
     #     print "Running lag_luminosity.."
-    # 
+    #
     #     import numpy as np
     #     import lib.units as units
-    # 
+    #
     #     # Convert apparant magnitude to absolute magnitude before calculating the lag
     #     from copy import copy
     #     absoluteMag = copy(self.mag) - self.magApparant + self.magAbsolute
     #     print 'mean(absoluteMag)', np.mean(absoluteMag)
-    # 
+    #
     #     # Calculate timelag based on radius-luminosity relationship
     #     timelag = units.r_from_l(units.mag_to_lum5100(absoluteMag))
     #     self.time = self.time + timelag
-    # 
+    #
     #     # # #
     #     # Write some output
     #     print "Average luminosity: ", np.mean(units.mag_to_lum5100(absoluteMag))
-    # 
+    #
     #     minLag = units.r_from_l(units.mag_to_lum5100(max(absoluteMag)))
     #     maxLag = units.r_from_l(units.mag_to_lum5100(min(absoluteMag)))
     #     avgLag = units.r_from_l(units.mag_to_lum5100(np.mean(absoluteMag)))
-    # 
+    #
     #     print "Minimum lag = ", minLag
     #     print "Maximum lag = ", maxLag
     #     print "Lag difference = ", maxLag - minLag
     #     print "Lag corresponding to average luminosity (Continuum) = ", avgLag
     #     # # #
-    # 
+    #
     #     # Sort time array
     #     self.time.sort()
 
@@ -112,17 +112,25 @@ class LightCurve():
         Usage: addNoiseGaussian([Signal To Noise])
         Output: None (modifies the instance).
         """
-        squaredError = self.flux**2. / snr**2. - self.ferr**2.
-        if (squaredError < 0.).any():
-            print """WARNING in addNoiseGaussian: Signal to noise larger than
-                the instrinsic for the lightcurve. No noise will be added!"""
-            return
+        if len(self.ferr) > 0:
+            squaredError = self.flux**2. / snr**2. - self.ferr**2.
+            if (squaredError < 0.).any():
+                print """WARNING in addNoiseGaussian: Signal to noise larger than
+                    the instrinsic for the lightcurve. No noise will be added!"""
+                return
 
-        std_noise = np.sqrt(squaredError)
-        noise = std_noise * np.random.randn(len(self.flux))
+            std_noise = np.sqrt(squaredError)
+            noise = std_noise * np.random.randn(len(self.flux))
 
-        self.flux += noise
-        self.ferr = np.sqrt(self.ferr**2. + std_noise**2.)
+            self.flux += noise
+            self.ferr = np.sqrt(self.ferr**2. + std_noise**2.)
+
+        elif len(self.ferr) == 0:
+            std_noise = self.flux / snr
+            noise = std_noise * np.random.randn(len(self.flux))
+
+            self.flux += noise
+            self.ferr = std_noise
 
     def rebin(self, shapeNew):
         """
