@@ -110,7 +110,7 @@ class Reverberation():
         self.lcCont.time -= min(self.lcCont.time)
         self.lcLine.time -= min(self.lcLine.time)
 
-    def observeConstantCadence(self, nObservations):
+    def observeConstantCadence(self, nObs, snr):
         """
         Function to 'observe' lightcurves with constant cadence.
         """
@@ -122,22 +122,22 @@ class Reverberation():
         fluxContObserved = []
         fluxLineObserved = []
 
-        fluxContError = []
-        fluxLineError = []
+        #fluxContError = []
+        #fluxLineError = []
 
-        # Dividing integers will floor automagically
-        cadence = int(len(self.lcCont.time))/int(nObservations)
+        # Calculate observing times
+        cadence = len(self.lcCont.time)/float(nObs)
+        obsTimes = np.arange(0.,len(self.lcCont.time),cadence)
+        obsTimes = np.round(obsTimes)
 
-        for i in range(nObservations):
-            t = cadence*i
+        for t in obsTimes:
             timeObserved.append(self.lcCont.time[t])
 
             fluxContObserved.append(self.lcCont.flux[t])
             fluxLineObserved.append(self.lcLine.flux[t])
 
-            # Adding 5 % errors
-            fluxContError.append(0.05*self.lcCont.flux[t])
-            fluxLineError.append(0.05*self.lcLine.flux[t])
+            #fluxContError.append(1./snr*self.lcCont.flux[t])
+            #fluxLineError.append(1./snr*self.lcLine.flux[t])
 
         lcContObserved.time = np.asarray(timeObserved)
         lcLineObserved.time = np.asarray(timeObserved)
@@ -149,8 +149,8 @@ class Reverberation():
         #lcLineObserved.ferr = np.asarray(fluxLineError)
 
         # Adding noise
-        lcContObserved.addNoiseGaussian(50.)
-        lcLineObserved.addNoiseGaussian(50.)
+        lcContObserved.addNoiseGaussian(snr)
+        lcLineObserved.addNoiseGaussian(snr)
 
         return Reverberation(lcContObserved, lcLineObserved)
 
