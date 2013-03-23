@@ -7,11 +7,45 @@ Date:    March 2013
 
 Summary:
 
-    Functions for making synthetic lightcurves.
+    Functions for generating lightcurves, using data or synthesizers.
 
 """
 
+import numpy as np
 from LightCurve import LightCurve
+
+def getLightCurveFromSpectra(spectra, minimum, maximum):
+    """
+    Generates the lightcurve of integrated flux within limits defined by minimum and maximum
+    For continuum, could be (from previous getLightCurveCont() function):
+    minimum = 5183
+    maximum = 5193
+    """
+    time = np.zeros(len(spectra))
+    flux = np.zeros(len(spectra))
+    ferr = np.zeros(len(spectra))
+
+    for i,spectrum in enumerate(spectra):
+        time[i] = spectrum.date
+        flux[i], ferr[i] = spectrum.integrate(minimum, maximum)
+
+    return LightCurve(time, flux, ferr)
+
+def getLightCurveFromSpectraHBeta(spectra):
+    """
+    Generates a lightcurve from integrating the HBeta line in a series of spectra.
+    Input: List of spectra instances.
+    Output: Lightcurve instance.
+    """
+    time = np.zeros(len(spectra))
+    flux = np.zeros(len(spectra))
+    ferr = np.zeros(len(spectra))
+
+    for i, spectrum in enumerate(spectra):
+        time[i] = spectrum.date
+        flux[i], ferr[i] = spectrum.integrateHBeta()
+
+    return LightCurve(time, flux, ferr)
 
 def syntheticLightCurveWiener(nBins):
     """

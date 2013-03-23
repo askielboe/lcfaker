@@ -64,47 +64,47 @@ class LightCurve():
 
         self.time = self.time + lag_const
 
-    def lag_luminosity(self):
-        """
-        AGN Lightcurves: Method for lagging light curve based on a given continuum
-        Input: Continuum lightcurve
-        Effect: self will be modified to a lagged lightcurve.
-        Output: None
-
-        TODO: Right now lag is based on R-L relation from Bentz et al.
-        It only works if the light curve is generated from the MacLeod method/function.
-        It _should_ work in general as a stand alone-method.
-        """
-        print "Running lag_luminosity.."
-
-        import numpy as np
-        import lib.units as units
-
-        # Convert apparant magnitude to absolute magnitude before calculating the lag
-        from copy import copy
-        absoluteMag = copy(self.mag) - self.magApparant + self.magAbsolute
-        print 'mean(absoluteMag)', np.mean(absoluteMag)
-
-        # Calculate timelag based on radius-luminosity relationship
-        timelag = units.r_from_l(units.mag_to_lum5100(absoluteMag))
-        self.time = self.time + timelag
-
-        # # #
-        # Write some output
-        print "Average luminosity: ", np.mean(units.mag_to_lum5100(absoluteMag))
-
-        minLag = units.r_from_l(units.mag_to_lum5100(max(absoluteMag)))
-        maxLag = units.r_from_l(units.mag_to_lum5100(min(absoluteMag)))
-        avgLag = units.r_from_l(units.mag_to_lum5100(np.mean(absoluteMag)))
-
-        print "Minimum lag = ", minLag
-        print "Maximum lag = ", maxLag
-        print "Lag difference = ", maxLag - minLag
-        print "Lag corresponding to average luminosity (Continuum) = ", avgLag
-        # # #
-
-        # Sort time array
-        self.time.sort()
+    # def lag_luminosity(self):
+    #     """
+    #     AGN Lightcurves: Method for lagging light curve based on a given continuum
+    #     Input: Continuum lightcurve
+    #     Effect: self will be modified to a lagged lightcurve.
+    #     Output: None
+    # 
+    #     TODO: Right now lag is based on R-L relation from Bentz et al.
+    #     It only works if the light curve is generated from the MacLeod method/function.
+    #     It _should_ work in general as a stand alone-method.
+    #     """
+    #     print "Running lag_luminosity.."
+    # 
+    #     import numpy as np
+    #     import lib.units as units
+    # 
+    #     # Convert apparant magnitude to absolute magnitude before calculating the lag
+    #     from copy import copy
+    #     absoluteMag = copy(self.mag) - self.magApparant + self.magAbsolute
+    #     print 'mean(absoluteMag)', np.mean(absoluteMag)
+    # 
+    #     # Calculate timelag based on radius-luminosity relationship
+    #     timelag = units.r_from_l(units.mag_to_lum5100(absoluteMag))
+    #     self.time = self.time + timelag
+    # 
+    #     # # #
+    #     # Write some output
+    #     print "Average luminosity: ", np.mean(units.mag_to_lum5100(absoluteMag))
+    # 
+    #     minLag = units.r_from_l(units.mag_to_lum5100(max(absoluteMag)))
+    #     maxLag = units.r_from_l(units.mag_to_lum5100(min(absoluteMag)))
+    #     avgLag = units.r_from_l(units.mag_to_lum5100(np.mean(absoluteMag)))
+    # 
+    #     print "Minimum lag = ", minLag
+    #     print "Maximum lag = ", maxLag
+    #     print "Lag difference = ", maxLag - minLag
+    #     print "Lag corresponding to average luminosity (Continuum) = ", avgLag
+    #     # # #
+    # 
+    #     # Sort time array
+    #     self.time.sort()
 
     def addNoiseGaussian(self, snr):
         """
