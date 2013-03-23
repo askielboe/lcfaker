@@ -141,8 +141,12 @@ class Reverberation():
         lcContObserved.flux = np.asarray(fluxContObserved)
         lcLineObserved.flux = np.asarray(fluxLineObserved)
 
-        lcContObserved.ferr = np.asarray(fluxContError)
-        lcLineObserved.ferr = np.asarray(fluxLineError)
+        #lcContObserved.ferr = np.asarray(fluxContError)
+        #lcLineObserved.ferr = np.asarray(fluxLineError)
+
+        # Adding noise
+        lcContObserved.addNoiseGaussian(50.)
+        lcLineObserved.addNoiseGaussian(50.)
 
         return Reverberation(lcContObserved, lcLineObserved)
 
