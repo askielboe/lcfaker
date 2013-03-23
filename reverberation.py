@@ -76,7 +76,7 @@ class Reverberation():
         """
         import matplotlib.pyplot as plt
         plt.figure()
-        if self.lcCont.ferr > 0 and self.lcLine.ferr > 0:
+        if len(self.lcCont.ferr) > 0 and len(self.lcLine.ferr) > 0:
             plt.errorbar(self.lcCont.time, self.lcCont.flux, self.lcCont.ferr, label=self.lcCont.label)
             plt.errorbar(self.lcLine.time, self.lcLine.flux, self.lcLine.ferr, label=self.lcLine.label)
         else:
