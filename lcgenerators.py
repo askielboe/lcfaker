@@ -14,6 +14,17 @@ Summary:
 import numpy as np
 from LightCurve import LightCurve
 
+def getTestLightCurve():
+    """
+    Function for getting a test light curve
+    """
+    time = np.arange(0.,100.,1.)
+    flux = np.zeros(len(time))
+    flux[40:60] = np.exp(-(time[40:60]-50.)**2./(2*5.0**2.))
+    ferr = np.zeros(len(time))
+
+    return LightCurve(time, flux, ferr)
+
 def getLightCurveFromSpectra(spectra, minimum, maximum):
     """
     Generates the lightcurve of integrated flux within limits defined by minimum and maximum
