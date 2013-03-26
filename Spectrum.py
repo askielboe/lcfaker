@@ -22,11 +22,11 @@ class Spectrum():
     given in the original papers.
     """
 
-    def __init__(self):
-        self.date = int(0)
-        self.wavelength = np.array([])
-        self.flux = np.array([])
-        self.fluxErr = np.array([])
+    def __init__(wavelength = np.array([]), flux = np.array([]), fluxErr = np.array([]), date = int(-1)):
+        self.date = date
+        self.wavelength = wavelength
+        self.flux = flux
+        self.fluxErr = fluxErr
 
     def mask(self, minimum, maximum=-1):
         if maximum == -1:
