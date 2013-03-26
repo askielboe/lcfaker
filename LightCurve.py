@@ -171,6 +171,10 @@ class LightCurve():
         flux: ndarray, the flux in the lightcurve
         """
 
+        # If chosen time is outside self time raise an exception
+        if t < min(self.time) or t > max(self.time):
+            raise ValueError('Time for interpolation outside data range.')
+
         # First check if a datapoint exists at the given time
         mask = self.mask(self.time, t)
         if True in mask:
