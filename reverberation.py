@@ -133,8 +133,17 @@ class Reverberation():
 
         # Calculate observing times
         cadence = len(self.lcCont.time)/float(nObs)
-        obsTimes = np.arange(0.,len(self.lcCont.time),cadence)
+        obsTimes = np.arange(0.,len(self.lcCont.time)-1,cadence)
+        # Add random shift to obsTimes
+        obsTimes += np.random.rand()*cadence
         obsTimes = np.round(obsTimes)
+
+        obsTimes = obsTimes[obsTimes < len(self.lcCont.time)]
+
+        #obsTimes = obsTimes[obsTimes < len(self.lcCont.time)]
+
+        #if obsTimes[-1] > len(self.lcCont.time):
+        #    obsTimes = obsTimes[:-1]
 
         for t in obsTimes:
             timeObserved.append(self.lcCont.time[t])
