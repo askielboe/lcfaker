@@ -191,6 +191,8 @@ class Spectrum():
         Adding gaussian noise to the spectrum based on the provied SNR
         Note: The SNR is then per bin (e.g. 2 A)
         """
+        np.random.seed()
+
         squaredError = self.flux**2. / snr**2. - self.fluxError**2.
         if (squaredError < 0.).any():
             print """WARNING in addNoiseGaussian: Signal to noise larger than
