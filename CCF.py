@@ -24,7 +24,7 @@ class CCF():
         sumRunning = 0.
         for i in range(len(ccfCut)):
             sumRunning += ccfCut[i]
-            if sumRunning > sumCCF / 2.:
+            if sumRunning >= sumCCF / 2.:
                 center = (timesCut[i] + timesCut[i-1]) / 2.
                 break
 
