@@ -29,7 +29,7 @@ class Reverberation():
 
     def getCrossCorrelationFunction(self, times=np.arange(-50., 100., 1.)):
         """
-        Returns a cross correlation function (CCF) instance of a CCF class
+        Returns a cross correlation function (CCF) instance of a CCF class.
         """
 
         # Generate lightcurves
@@ -44,29 +44,39 @@ class Reverberation():
         ccf1 = np.zeros(len(times))
         ccf2 = np.zeros(len(times))
 
+        # Find the light curve with the most datapoints, and loop through those time
+        if len(lcCont.time) >= len(lcLine.time):
+            lcTimes = lcCont.time
+            lcFewTimes = lcLine.time
+        else:
+            lcTimes = lcLine.time
+            lcFewTimes = lcCont.time
+
         # Compute CCF1 where
         # each emission-line measurement L(t_i)
         # is paired with interpolated continuum values at C(t_i - tau)
         for i, tau in enumerate(times):
-            for j in range(len(lcCont.time)):
-                lagTime = lcCont.time[j] - tau
-                if lagTime < min(lcCont.time) or lagTime > max(lcCont.time): continue
-                ccf1[i] += (lcLine.flux[j] - np.mean(lcLine.flux)) \
+            for j in range(len(lcTimes)):
+                lagTime = lcTimes[j] - tau
+                if lagTime < min(lcFewTimes) or lagTime > max(lcFewTimes): continue
+                if lcTimes[j] < min(lcFewTimes) or lcTimes[j] > max(lcFewTimes): continue
+                ccf1[i] += (lcLine.getFluxInterpolated(lcTimes[j]) - np.mean(lcLine.flux)) \
                        * (lcCont.getFluxInterpolated(lagTime) - np.mean(lcCont.flux)) \
                        / (np.std(lcLine.flux) * np.std(lcCont.flux))
-        ccf1 /= len(lcCont.time)
+        ccf1 /= len(lcTimes)
 
         # Compute CCF2 where
         # the measured continuum points C(t_i)
         # are paired with interpolated emission-line values at L(t_i + tau)
         for i, tau in enumerate(times):
-            for j in range(len(lcCont.time)):
-                lagTime = lcCont.time[j] + tau
-                if lagTime < min(lcCont.time) or lagTime > max(lcCont.time): continue
-                ccf2[i] += (lcCont.flux[j] - np.mean(lcCont.flux)) \
+            for j in range(len(lcTimes)):
+                lagTime = lcTimes[j] + tau
+                if lagTime < min(lcFewTimes) or lagTime > max(lcFewTimes): continue
+                if lcTimes[j] < min(lcFewTimes) or lcTimes[j] > max(lcFewTimes): continue
+                ccf2[i] += (lcCont.getFluxInterpolated(lcTimes[j]) - np.mean(lcCont.flux)) \
                        * (lcLine.getFluxInterpolated(lagTime) - np.mean(lcLine.flux)) \
                        / (np.std(lcLine.flux) * np.std(lcCont.flux))
-        ccf2 /= len(lcCont.time)
+        ccf2 /= len(lcTimes)
 
         # Calculate mean CCF
         ccf = (ccf1 + ccf2) / 2.
