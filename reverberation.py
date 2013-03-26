@@ -20,9 +20,12 @@ class Reverberation():
 
     def __init__(self, lcCont, lcLine):
         # Deepcopy light curves instances, so they are not modified
-        # Will-it-work!?
-        self.lcCont = deepcopy(lcCont)
-        self.lcLine = deepcopy(lcLine)
+        # Will-it-work!? - Memory leak!?
+        # self.lcCont = deepcopy(lcCont)
+        # self.lcLine = deepcopy(lcLine)
+
+        self.lcCont = lcCont
+        self.lcLine = lcLine
 
     def getCrossCorrelationFunction(self, times=np.arange(-50., 100., 1.)):
         """
@@ -51,7 +54,7 @@ class Reverberation():
                 ccf1[i] += (lcLine.flux[j] - np.mean(lcLine.flux)) \
                        * (lcCont.getFluxInterpolated(lagTime) - np.mean(lcCont.flux)) \
                        / (np.std(lcLine.flux) * np.std(lcCont.flux))
-            ccf1[i] /= len(lcCont.time)
+        ccf1 /= len(lcCont.time)
 
         # Compute CCF2 where
         # the measured continuum points C(t_i)
@@ -63,25 +66,25 @@ class Reverberation():
                 ccf2[i] += (lcCont.flux[j] - np.mean(lcCont.flux)) \
                        * (lcLine.getFluxInterpolated(lagTime) - np.mean(lcLine.flux)) \
                        / (np.std(lcLine.flux) * np.std(lcCont.flux))
-            ccf2[i] /= len(lcCont.time)
+        ccf2 /= len(lcCont.time)
 
         # Calculate mean CCF
         ccf = (ccf1 + ccf2) / 2.
 
         return CCF(times, ccf)
 
-    def plot(self):
+    def plot(self, marker='o', linestyle=''):
         """
         Function to plot two lightcurves
         """
         import matplotlib.pyplot as plt
         plt.figure()
         if len(self.lcCont.ferr) > 0 and len(self.lcLine.ferr) > 0:
-            plt.errorbar(self.lcCont.time, self.lcCont.flux, self.lcCont.ferr, label=self.lcCont.label)
-            plt.errorbar(self.lcLine.time, self.lcLine.flux, self.lcLine.ferr, label=self.lcLine.label)
+            plt.errorbar(self.lcCont.time, self.lcCont.flux, self.lcCont.ferr, label=self.lcCont.label, marker=marker, linestyle=linestyle)
+            plt.errorbar(self.lcLine.time, self.lcLine.flux, self.lcLine.ferr, label=self.lcLine.label, marker=marker, linestyle=linestyle)
         else:
-            plt.plot(self.lcCont.time, self.lcCont.flux, label=self.lcCont.label)
-            plt.plot(self.lcLine.time, self.lcLine.flux, label=self.lcLine.label)
+            plt.plot(self.lcCont.time, self.lcCont.flux, label=self.lcCont.label, marker=marker, linestyle=linestyle)
+            plt.plot(self.lcLine.time, self.lcLine.flux, label=self.lcLine.label, marker=marker, linestyle=linestyle)
         plt.show()
 
     def trim(self):
@@ -110,10 +113,13 @@ class Reverberation():
         self.lcCont.time -= min(self.lcCont.time)
         self.lcLine.time -= min(self.lcLine.time)
 
-    def observeConstantCadence(self, nObs, snr):
+    def observeConstantCadence(self, nObs, snr=-1):
         """
         Function to 'observe' lightcurves with constant cadence.
         """
+
+        if nObs > len(self.lcCont.time):
+            raise ValueError('Number of observations larger than available data! Please choose a lower nObs.')
 
         lcContObserved = LightCurve()
         lcLineObserved = LightCurve()
@@ -148,9 +154,11 @@ class Reverberation():
         #lcContObserved.ferr = np.asarray(fluxContError)
         #lcLineObserved.ferr = np.asarray(fluxLineError)
 
+
         # Adding noise
-        lcContObserved.addNoiseGaussian(snr)
-        lcLineObserved.addNoiseGaussian(snr)
+        if snr > -1:
+            lcContObserved.addNoiseGaussian(snr)
+            lcLineObserved.addNoiseGaussian(snr)
 
         return Reverberation(lcContObserved, lcLineObserved)
 
