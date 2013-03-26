@@ -22,11 +22,11 @@ class Spectrum():
     given in the original papers.
     """
 
-    def __init__(wavelength = np.array([]), flux = np.array([]), fluxErr = np.array([]), date = int(-1)):
+    def __init__(self, wavelength = np.array([]), flux = np.array([]), ferr = np.array([]), date = int(-1)):
         self.date = date
         self.wavelength = wavelength
         self.flux = flux
-        self.fluxErr = fluxErr
+        self.ferr = ferr
 
     def mask(self, minimum, maximum=-1):
         if maximum == -1:
@@ -39,8 +39,8 @@ class Spectrum():
         plt.figure()
 
         # Plot errorbars if we have them
-        if len(self.fluxErr) > 0:
-            plt.errorbar(self.wavelength, self.flux, self.fluxErr)
+        if len(self.ferr) > 0:
+            plt.errorbar(self.wavelength, self.flux, self.ferr)
         else:
             plt.plot(self.wavelength, self.flux)
 
@@ -64,7 +64,7 @@ class Spectrum():
     #
     #     self.wavelength = data.T[0]
     #     self.flux = data.T[1]
-    #     self.fluxError = data.T[2]
+    #     self.ferr = data.T[2]
 
     def integrate(self, minWavelength, maxWavelength):
         """
@@ -73,10 +73,10 @@ class Spectrum():
         mask = self.mask(minWavelength, maxWavelength)
 
         flux = self.flux[mask]
-        fluxError = self.fluxError[mask]
+        ferr = self.ferr[mask]
 
         integralFlux = np.sum(flux)
-        integralError = np.sqrt(np.sum(fluxError**2.))
+        integralError = np.sqrt(np.sum(ferr**2.))
 
         integralFlux *= 1./len(flux)
         integralError *= 1./len(flux)
@@ -96,7 +96,7 @@ class Spectrum():
 
         wavelength = self.wavelength[mask]
         flux = self.flux[mask]
-        fluxError = self.fluxError[mask]
+        ferr = self.ferr[mask]
 
         # Fit a polynomial
         fit = np.polyfit(wavelength, flux, 2)
@@ -104,7 +104,7 @@ class Spectrum():
         # Calculate error from the continuum fit
         # using the average error in the bins used
         # divided by sqrt(numberOfBins)
-        fitError = np.mean(fluxError) / np.sqrt(len(flux))
+        fitError = np.mean(ferr) / np.sqrt(len(flux))
 
         return fit, fitError
 
@@ -133,13 +133,13 @@ class Spectrum():
         # Limit data to the HBeta line
         wavelength = self.wavelength[mask]
         flux = self.flux[mask]
-        fluxError = self.fluxError[mask]
+        ferr = self.ferr[mask]
 
         # Calculate the integral flux with continuum subtracted
         integralFlux = np.sum(flux - p(wavelength))
 
         # Calculate the error for the line integration
-        integralError = np.sqrt(np.sum(fluxError**2.) + len(flux)*(fitError**2.))
+        integralError = np.sqrt(np.sum(ferr**2.) + len(flux)*(fitError**2.))
 
         # Normalize to window size (getting flux per 2 AA) - Unnecessary?
         integralFlux *= 1./len(flux)
@@ -172,13 +172,13 @@ class Spectrum():
         # Limit data to the HBeta line
         wavelength = self.wavelength[mask]
         flux = self.flux[mask]
-        fluxError = self.fluxError[mask]
+        ferr = self.ferr[mask]
 
         # Calculate the integral flux with continuum subtracted
         integralFlux = np.sum(flux - p(wavelength))
 
         # Calculate the error for the line integration
-        integralError = np.sqrt(np.sum(fluxError**2.) + len(flux)*(fitError**2.))
+        integralError = np.sqrt(np.sum(ferr**2.) + len(flux)*(fitError**2.))
 
         # Normalize to window size (getting flux per 2 AA) - Unnecessary?
         integralFlux *= 1./len(flux)
@@ -190,10 +190,11 @@ class Spectrum():
         """
         Adding gaussian noise to the spectrum based on the provied SNR
         Note: The SNR is then per bin (e.g. 2 A)
+        Returns new Spectrum instance.
         """
         np.random.seed()
 
-        squaredError = self.flux**2. / snr**2. - self.fluxError**2.
+        squaredError = self.flux**2. / snr**2. - self.ferr**2.
         if (squaredError < 0.).any():
             print """WARNING in addNoiseGaussian: Signal to noise larger than
                 the instrinsic for the spectrum. No noise will be added!"""
@@ -202,8 +203,12 @@ class Spectrum():
         std_noise = np.sqrt(squaredError)
         noise = std_noise * np.random.randn(len(self.flux))
 
-        self.flux += noise
-        self.fluxError = np.sqrt(self.fluxError**2. + std_noise**2.)
+        wavelength = self.wavelength.copy()
+        flux = self.flux + noise
+        ferr = np.sqrt(self.ferr**2. + std_noise**2.)
+        date = self.date
+
+        return Spectrum(wavelength = wavelength, flux = flux, ferr = ferr, date = date)
 
     def fit(self, minWavelength, maxWavelength, doplot=0):
         """
