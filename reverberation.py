@@ -113,64 +113,6 @@ class Reverberation():
         self.lcCont.time -= min(self.lcCont.time)
         self.lcLine.time -= min(self.lcLine.time)
 
-    def observeConstantCadence(self, nObs, snr=-1):
-        """
-        Function to 'observe' lightcurves with constant cadence.
-        """
-
-        if nObs > len(self.lcCont.time):
-            raise ValueError('Number of observations larger than available data! Please choose a lower nObs.')
-
-        lcContObserved = LightCurve()
-        lcLineObserved = LightCurve()
-
-        timeObserved = []
-        fluxContObserved = []
-        fluxLineObserved = []
-
-        #fluxContError = []
-        #fluxLineError = []
-
-        # Calculate observing times
-        cadence = len(self.lcCont.time)/float(nObs)
-        obsTimes = np.arange(0.,len(self.lcCont.time)-1,cadence)
-        # Add random shift to obsTimes
-        obsTimes += np.random.rand()*cadence
-        obsTimes = np.round(obsTimes)
-
-        obsTimes = obsTimes[obsTimes < len(self.lcCont.time)]
-
-        #obsTimes = obsTimes[obsTimes < len(self.lcCont.time)]
-
-        #if obsTimes[-1] > len(self.lcCont.time):
-        #    obsTimes = obsTimes[:-1]
-
-        for t in obsTimes:
-            timeObserved.append(self.lcCont.time[t])
-
-            fluxContObserved.append(self.lcCont.flux[t])
-            fluxLineObserved.append(self.lcLine.flux[t])
-
-            #fluxContError.append(1./snr*self.lcCont.flux[t])
-            #fluxLineError.append(1./snr*self.lcLine.flux[t])
-
-        lcContObserved.time = np.asarray(timeObserved)
-        lcLineObserved.time = np.asarray(timeObserved)
-
-        lcContObserved.flux = np.asarray(fluxContObserved)
-        lcLineObserved.flux = np.asarray(fluxLineObserved)
-
-        #lcContObserved.ferr = np.asarray(fluxContError)
-        #lcLineObserved.ferr = np.asarray(fluxLineError)
-
-
-        # Adding noise
-        if snr > -1:
-            lcContObserved.addNoiseGaussian(snr)
-            lcLineObserved.addNoiseGaussian(snr)
-
-        return Reverberation(lcContObserved, lcLineObserved)
-
     # def plotLightCurves(lightcurves):
     #     """
     #     Plot a range of lightcurves on top of eachother

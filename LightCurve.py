@@ -191,6 +191,42 @@ class LightCurve():
 
         return f
 
+    def observeConstantCadence(self, nObs, snr=-1):
+        """
+        Function to 'observe' lightcurve with constant cadence.
+        """
+
+        if nObs > len(self.time):
+            raise ValueError('Number of observations larger than available data! Please choose a lower nObs.')
+
+        lcObserved = LightCurve()
+
+        timeObserved = []
+        fluxObserved = []
+
+        # Calculate observing times
+        cadence = len(self.time)/float(nObs)
+        obsTimes = np.arange(0.,len(self.time)-1,cadence)
+
+        # Add random shift to obsTimes
+        obsTimes += np.random.rand()*cadence
+        obsTimes = np.round(obsTimes)
+
+        obsTimes = obsTimes[obsTimes < len(self.time)]
+
+        for t in obsTimes:
+            timeObserved.append(self.time[t])
+            fluxObserved.append(self.flux[t])
+
+        lcObserved.time = np.asarray(timeObserved)
+        lcObserved.flux = np.asarray(fluxObserved)
+
+        # Adding noise
+        if snr > -1:
+            lcObserved.addNoiseGaussian(snr)
+
+        return lcObserved
+
     def plot(self, units='Jy', figure=1, color='b', label='', marker='-'):
         import matplotlib.pyplot as plt
         plt.figure(figure)
