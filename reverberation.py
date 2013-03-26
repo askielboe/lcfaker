@@ -52,17 +52,35 @@ class Reverberation():
             lcTimes = lcLine.time
             lcFewTimes = lcCont.time
 
+        # Calculate interpolated flux where we don't have data
+        lcLineInterpolatedFlux = lcLine.getFluxInterpolated(lcTimes[j])
+
         # Compute CCF1 where
         # each emission-line measurement L(t_i)
         # is paired with interpolated continuum values at C(t_i - tau)
+
+        # Vectorized
+
+
+
         for i, tau in enumerate(times):
-            for j in range(len(lcTimes)):
-                lagTime = lcTimes[j] - tau
-                if lagTime < min(lcFewTimes) or lagTime > max(lcFewTimes): continue
-                if lcTimes[j] < min(lcFewTimes) or lcTimes[j] > max(lcFewTimes): continue
-                ccf1[i] += (lcLine.getFluxInterpolated(lcTimes[j]) - np.mean(lcLine.flux)) \
+            #for j in range(len(lcTimes)):
+                #lagTime = lcTimes[j] - tau
+                lagTime = lcTimes - tau
+
+                # Mask out values outside data range
+                #if lagTime < min(lcFewTimes) or lagTime > max(lcFewTimes): continue
+                #if lcTimes[j] < min(lcFewTimes) or lcTimes[j] > max(lcFewTimes): continue
+                maskLagTime = lagTime >= min(lcFewTimes) * lagTime <= max(lcFewTimes)
+                maskLcTimes = lcTimes >= min(lcFewTimes) * lcTimes <= max(lcFewTimes)
+
+                lagTime = lagTime[maskLagTime]
+                lcTimes = lcTimes[maskLcTimes]
+
+                ccf1[i] = (lcLine.getFluxInterpolated(lcTimes) - np.mean(lcLine.flux)) \
                        * (lcCont.getFluxInterpolated(lagTime) - np.mean(lcCont.flux)) \
                        / (np.std(lcLine.flux) * np.std(lcCont.flux))
+
         ccf1 /= len(lcTimes)
 
         # Compute CCF2 where
