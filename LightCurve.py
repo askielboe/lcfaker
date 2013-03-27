@@ -159,7 +159,7 @@ class LightCurve():
         """
         self.flux = self.flux * float(scale)
 
-    def getFluxInterpolated(self, t):
+    def getFluxInterpolated(self, tInter):
         """
         Returns a flux at any given time using
         linear interpolation between nearby data points
@@ -171,79 +171,32 @@ class LightCurve():
         flux: ndarray, the flux in the lightcurve
         """
 
-        # If chosen time is outside self time raise an exception
-        if t < min(self.time) or t > max(self.time):
-            raise ValueError('Time for interpolation outside data range.')
-
-        # First check if a datapoint exists at the given time
-        mask = self.mask(self.time, t)
-        if True in mask:
-            f = self.flux[mask]
-        else:
-            maskLower = self.mask(self.time, 0, t)
-            maskUpper = self.mask(self.time, t, max(self.time))
-
-            indexLower = max(np.nonzero(maskLower)[0])
-            indexUpper = min(np.nonzero(maskUpper)[0])
-
-            # Calculate linear slope
-            a = (self.flux[indexUpper] - self.flux[indexLower]) \
-              / (self.time[indexUpper] - self.time[indexLower])
-
-            # Calculated extrapolated flux at time t
-            f = self.flux[indexLower] + a * (t - self.time[indexLower])
-
-        return f
-
-    def getFluxInterpolatedArray(self, times):
-        """
-        Returns a flux at any given time using
-        linear interpolation between nearby data points
-
-        t: time for which we calculate the interpolated flux
-        f: interpolated flux at time t
-
-        time: is an ndarray with J dates for the lightcurve
-        flux: ndarray, the flux in the lightcurve
-        """
-
-        flux = np.zeros(len(times))
+        flux = np.zeros(len(tInter))
 
         # If chosen time is outside self time raise an exception
-        if np.any(times < min(self.time)) or np.any(times > max(self.time)):
+        if np.any(tInter < min(self.time)) or np.any(tInter > max(self.time)):
             raise ValueError('Time for interpolation outside data range.')
 
         # If a datapoint exist at the given time use that
-        flux[self.time == times] = self.flux[self.time == times]
+        flux[self.time == tInter] = self.flux[self.time == tInter]
 
         # Otherwise we do interpolation
-        # First get indices of light curve times left of the interpolation times
-        indicesLeft = []
-        a = []
-        for time in times:
-            maskLower = self.mask(self.time, 0, t)
-            maskUpper = self.mask(self.time, t, max(self.time))
-            indexLower = max(np.nonzero(maskLower)[0])
-            indexUpper = min(np.nonzero(maskUpper)[0])
-            
-            indicesLeft = np.max(np.nonzero(self.time < times))
-
-        # Then get all the points to the right
-        #indicesRight = np.min(np.nonzero(self.time < times))
-
-        # Calculate slopes for each region
-        a = []
-        for iLeft in indicesLeft:
-            a.append( (self.flux[iLeft+1] - self.flux[iLeft]) \
-                    / (self.time[iLeft+1] - self.time[iLeft]) )
+        # First calculate slope between all points
+        # We do this by subtracting self.time array from a shifted verion of itself
+        slopes = (self.flux[1:] - self.flux[:-1]) \
+               / (self.time[1:] - self.time[:-1])
 
         # Calculate the fluxes we don't already have from data
-        for t in np.nonzero(self.time != times):
-            # Figure out which region we're in (again labeled by the left index)
-            indexLeft = np.max(np.nonzero(self.time < times[t]))
-            flux[t] = self.flux[indexLeft] + a[indexLeft] * (times[t] - self.time[indexLeft])
+        # Figure out which slopes belong to which tInter
+        index = []
+        for ti in tInter:
+            index.append(np.max(np.nonzero(tInter <= ti)))
 
-        return flux
+        # The correct slopes for each tInter is then slopes[index]
+        # And the interpolated fluxes are
+        fInter = (tInter - self.time[index])*slopes[index] + self.flux[index]
+
+        return fInter
 
         # mask = self.mask(self.time, t)
         # if True in mask:
