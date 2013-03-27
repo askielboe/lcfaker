@@ -171,10 +171,11 @@ class LightCurve():
         flux: ndarray, the flux in the lightcurve
         """
 
-        if type(tInter) != list:
-            tInter = [tInter]
-
-        tInter = np.array(tInter)
+        # Make sure that tInter is a numpy array
+        if type(tInter) != np.ndarray and type(tInter) != list:
+            tInter = np.array([tInter])
+        elif type(tInter) == list:
+            tInter = np.array(tInter)
 
         # If chosen time is outside self time raise an exception
         if np.any(tInter < min(self.time)) or np.any(tInter > max(self.time)):
