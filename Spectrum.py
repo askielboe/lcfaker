@@ -11,6 +11,7 @@ Summary:
 
 """
 
+from time import clock
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -192,7 +193,7 @@ class Spectrum():
         Note: The SNR is then per bin (e.g. 2 A)
         Returns new Spectrum instance.
         """
-        np.random.seed()
+        np.random.seed(int(clock()*10e6))
 
         squaredError = self.flux**2. / snr**2. - self.ferr**2.
         if (squaredError < 0.).any():
