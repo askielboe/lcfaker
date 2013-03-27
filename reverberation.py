@@ -32,10 +32,6 @@ class Reverberation():
         Returns a cross correlation function (CCF) instance of a CCF class.
         """
 
-        # Generate lightcurves
-        #self.generateLightCurve(5183, 5193, label='Cont')
-        #self.generateLightCurveHBeta('wide', label='HBeta')
-
         # Get time coordinates used to generate the CCF
         lcCont = self.lcCont
         lcLine = self.lcLine
@@ -44,83 +40,55 @@ class Reverberation():
         ccf1 = np.zeros(len(times))
         ccf2 = np.zeros(len(times))
 
-        # # Find the light curve with the most datapoints, and loop through those times
-        # if len(lcCont.time) >= len(lcLine.time):
-        #     lcTimes = lcCont.time
-        #     lcFewTimes = lcLine.time
-        # else:
-        #     lcTimes = lcLine.time
-        #     lcFewTimes = lcCont.time
-
-        # Vectorized ------------>
+        # Get flux for the line
+        # (assuming that we can have fewer line masurements than continuum)
+        lcLineFlux = lcLine.getFluxInterpolated(lcCont.time)
 
         # Compute CCF1 where
         # each emission-line measurement L(t_i)
         # is paired with interpolated continuum values at C(t_i - tau)
-
-        # Get flux for the line
-        # (assuming that we can have fewer line masurements than continuum)
-        lcLineFluxInter = lcLine.getFluxInterpolated(lcCont.time)
-
         for i, tau in enumerate(times):
             # Calculate the times for the lagged light curve
             lcContLaggedTime = lcCont.time - tau
 
             # Remove the data that we don't have
             mask = (lcContLaggedTime >= min(lcCont.time)) * (lcContLaggedTime <= max(lcCont.time))
-            print len(mask)
-            print len(lcContLaggedTime)
-            print len(lcLineFluxInter)
             lcContLaggedTime = lcContLaggedTime[mask]
-            lcLineFluxInterMasked  = lcLineFluxInter[mask]
+            lcLineFluxMasked  = lcLineFlux[mask]
 
             # Get flux for the lagged times
             lcContLaggedFluxInter = lcCont.getFluxInterpolated(lcContLaggedTime)
 
             # TODO: Exclude points outside range in the mean and std calcs?
-            ccf1[i] = np.sum((lcLineFluxInterMasked - np.mean(lcLineFluxInterMasked)) \
+            ccf1[i] = np.sum((lcLineFluxMasked - np.mean(lcLineFluxMasked)) \
                    * (lcContLaggedFluxInter - np.mean(lcContLaggedFluxInter)) \
-                   / (np.std(lcLineFluxInterMasked) * np.std(lcContLaggedFluxInter)))
+                   / (np.std(lcLineFluxMasked) * np.std(lcContLaggedFluxInter)))
 
-        ccf1 /= len(ccf1)
+        ccf1 /= (i+1.)
 
         # Compute CCF2 where
         # the measured continuum points C(t_i)
         # are paired with interpolated emission-line values at L(t_i + tau)
-
         for i, tau in enumerate(times):
             # Calculate the times for the lagged light curve
             # NOTE: We still use the continuum times, and just interpolate the line where we dont have data
             # - using lcLineFluxInter calculated above
-            lcLineLaggedTime = lcCont.time - tau
+            lcLineLaggedTime = lcCont.time + tau
 
             # Remove the data that we don't have
             mask = (lcLineLaggedTime >= min(lcCont.time)) * (lcLineLaggedTime <= max(lcCont.time))
-            print len(mask)
-            print len(lcContLaggedTime)
-            print len(lcLineFluxInter)
             lcLineLaggedTime = lcLineLaggedTime[mask]
             lcContFluxMasked = lcCont.flux[mask]
 
             # Get flux for the lagged times
-            lcContLaggedFluxInter = lcCont.getFluxInterpolated(lcContLaggedTime)
+            lcLineLaggedFluxInter = lcLine.getFluxInterpolated(lcLineLaggedTime)
 
             # TODO: Exclude points outside range in the mean and std calcs?
             ccf2 = np.sum((lcContFluxMasked - np.mean(lcContFluxMasked)) \
-                   * (lcLineLaggedTime - np.mean(lcLineLaggedTime)) \
-                   / (np.std(lcLineLaggedTime) * np.std(lcContFluxMasked)))
+                   * (lcLineLaggedFluxInter - np.mean(lcLineLaggedFluxInter)) \
+                   / (np.std(lcLineLaggedFluxInter) * np.std(lcContFluxMasked)))
 
-        ccf2 /= len(ccf2)
-
-        # for i, tau in enumerate(times):
-        #     for j in range(len(lcTimes)):
-        #         lagTime = lcTimes[j] + tau
-        #         if lagTime < min(lcFewTimes) or lagTime > max(lcFewTimes): continue
-        #         if lcTimes[j] < min(lcFewTimes) or lcTimes[j] > max(lcFewTimes): continue
-        #         ccf2[i] += (lcCont.getFluxInterpolated(lcTimes[j]) - np.mean(lcCont.flux)) \
-        #                * (lcLine.getFluxInterpolated(lagTime) - np.mean(lcLine.flux)) \
-        #                / (np.std(lcLine.flux) * np.std(lcCont.flux))
-        # ccf2 /= len(lcTimes)
+        ccf2 /= (i+1)
 
         # Calculate mean CCF
         ccf = (ccf1 + ccf2) / 2.
