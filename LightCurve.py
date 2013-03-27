@@ -175,14 +175,10 @@ class LightCurve():
             tInter = [tInter]
 
         tInter = np.array(tInter)
-        flux = np.zeros(len(tInter))
 
         # If chosen time is outside self time raise an exception
         if np.any(tInter < min(self.time)) or np.any(tInter > max(self.time)):
             raise ValueError('Time for interpolation outside data range.')
-
-        # If a datapoint exist at the given time use that
-        flux[self.time == tInter] = self.flux[self.time == tInter]
 
         # Otherwise we do interpolation
         # First calculate slope between all points
@@ -192,6 +188,12 @@ class LightCurve():
 
         # Calculate the fluxes we don't already have from data
         # Figure out which slopes belong to which tInter
+        # BUT: If max(self.time) is in iInter we have a problem, so we take it out..
+        maxIntInter = False
+        if max(tInter) == max(self.time):
+            tInter = tInter[:-1]
+            maxIntInter = True
+
         index = []
         for ti in tInter:
             index.append(np.max(np.nonzero(self.time <= ti)))
@@ -199,6 +201,10 @@ class LightCurve():
         # The correct slopes for each tInter is then slopes[index]
         # And the interpolated fluxes are
         fInter = (tInter - self.time[index])*slopes[index] + self.flux[index]
+
+        # If we have removed the last point from tInter, add this to the flux now
+        if maxIntInter == True:
+            fInter = np.append(fInter,self.flux[-1])
 
         return fInter
 
