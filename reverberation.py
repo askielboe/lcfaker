@@ -36,9 +36,17 @@ class Reverberation():
         lcCont = self.lcCont
         lcLine = self.lcLine
 
-        # # # Do cross-correlation
+        # Allocate memory
         ccf1 = np.zeros(len(times))
         ccf2 = np.zeros(len(times))
+
+        # Calculate flux for all times needed (ASSUMES INTEGET TIMES ONLY!)
+        lcContMinTime = min(lcCont.time)
+        lcContMaxTime = max(lcCont.time)
+        allTimes = np.arange(lcContMinTime, lcContMaxTime, 1.)
+
+        lcContFluxInterAllTimes = lcCont.getFluxInterpolated(allTimes)
+        lcLineFluxInterAllTimes = lcLine.getFluxInterpolated(allTimes)
 
         # Get flux for the line
         # (assuming that we can have fewer line masurements than continuum)
@@ -57,7 +65,7 @@ class Reverberation():
             lcLineFluxMasked  = lcLineFlux[mask]
 
             # Get flux for the lagged times
-            lcContLaggedFluxInter = lcCont.getFluxInterpolated(lcContLaggedTime)
+            lcContLaggedFluxInter = lcContFluxInterAllTimes[lcContLaggedTime.astype(int) - int(lcContMinTime) - 1]
 
             # TODO: Exclude points outside range in the mean and std calcs?
             ccf1[i] = np.sum((lcLineFluxMasked - np.mean(lcLineFluxMasked)) \
@@ -81,7 +89,7 @@ class Reverberation():
             lcContFluxMasked = lcCont.flux[mask]
 
             # Get flux for the lagged times
-            lcLineLaggedFluxInter = lcLine.getFluxInterpolated(lcLineLaggedTime)
+            lcLineLaggedFluxInter = lcLineFluxInterAllTimes[lcLineLaggedTime.astype(int) - int(lcContMinTime) - 1]
 
             # TODO: Exclude points outside range in the mean and std calcs?
             ccf2 = np.sum((lcContFluxMasked - np.mean(lcContFluxMasked)) \
