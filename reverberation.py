@@ -40,7 +40,9 @@ class Reverberation():
         ccf1 = np.zeros(len(times))
         ccf2 = np.zeros(len(times))
 
-        # Calculate flux for all times needed (ASSUMES INTEGET TIMES ONLY!)
+        self.trim()
+
+        # Calculate flux for all times needed (ASSUMES INTEGER TIMES ONLY!)
         lcContMinTime = min(lcCont.time)
         lcContMaxTime = max(lcCont.time)
         allTimes = np.arange(lcContMinTime, lcContMaxTime + 1., 1.)
@@ -124,11 +126,10 @@ class Reverberation():
         Output: None (works on the instance).
         """
 
-        # Create mask of points in common betweent he lightcurves
-        maskCont = self.lcCont.time >= min(self.lcLine.time)
-        maskLine = self.lcLine.time <= max(self.lcCont.time)
+        # Create mask of points in common betweent the lightcurves
+        maskCont = (self.lcCont.time >= min(self.lcLine.time)) * (self.lcCont.time <= max(self.lcLine.time))
+        maskLine = (self.lcLine.time >= min(self.lcCont.time)) * (self.lcLine.time <= max(self.lcCont.time))
 
-        #
         self.lcCont.time = self.lcCont.time[maskCont]
         self.lcCont.flux = self.lcCont.flux[maskCont]
 
@@ -140,8 +141,8 @@ class Reverberation():
             self.lcLine.ferr = self.lcLine.ferr[maskLine]
 
         # Renormalize time
-        self.lcCont.time -= min(self.lcCont.time)
-        self.lcLine.time -= min(self.lcLine.time)
+        #self.lcCont.time -= min(self.lcCont.time)
+        #self.lcLine.time -= min(self.lcLine.time)
 
     # def plotLightCurves(lightcurves):
     #     """
