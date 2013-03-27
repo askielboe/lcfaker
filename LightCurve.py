@@ -171,6 +171,9 @@ class LightCurve():
         flux: ndarray, the flux in the lightcurve
         """
 
+        if type(tInter) != list:
+            tInter = [tInter]
+
         tInter = np.array(tInter)
         flux = np.zeros(len(tInter))
 
