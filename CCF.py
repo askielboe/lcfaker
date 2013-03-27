@@ -28,7 +28,10 @@ class CCF():
                 center = (timesCut[i] + timesCut[i-1]) / 2.
                 break
 
-        return center
+        try:
+            return center
+        except UnboundLocalError:
+            raise ValueError('ERROR: Could not find CCF center!')
 
     def plot(self):
         plt.figure()
