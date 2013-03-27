@@ -171,6 +171,7 @@ class LightCurve():
         flux: ndarray, the flux in the lightcurve
         """
 
+        tInter = np.array(tInter)
         flux = np.zeros(len(tInter))
 
         # If chosen time is outside self time raise an exception
@@ -190,32 +191,13 @@ class LightCurve():
         # Figure out which slopes belong to which tInter
         index = []
         for ti in tInter:
-            index.append(np.max(np.nonzero(tInter <= ti)))
+            index.append(np.max(np.nonzero(self.time <= ti)))
 
         # The correct slopes for each tInter is then slopes[index]
         # And the interpolated fluxes are
         fInter = (tInter - self.time[index])*slopes[index] + self.flux[index]
 
         return fInter
-
-        # mask = self.mask(self.time, t)
-        # if True in mask:
-        #     f = self.flux[mask]
-        # else:
-        #     maskLower = self.mask(self.time, 0, t)
-        #     maskUpper = self.mask(self.time, t, max(self.time))
-        #
-        #     indexLower = max(np.nonzero(maskLower)[0])
-        #     indexUpper = min(np.nonzero(maskUpper)[0])
-        #
-        #     # Calculate linear slope
-        #     a = (self.flux[indexUpper] - self.flux[indexLower]) \
-        #       / (self.time[indexUpper] - self.time[indexLower])
-        #
-        #     # Calculated extrapolated flux at time t
-        #     f = self.flux[indexLower] + a * (t - self.time[indexLower])
-        #
-        # return f
 
     def observeConstantCadence(self, nObs, snr=-1):
         """
