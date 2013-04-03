@@ -61,8 +61,8 @@ class LightCurve():
 
     def lag_const(self, lag_const):
         print "Running lag_const.."
-
         self.time = self.time + lag_const
+        return None
 
     # def lag_luminosity(self):
     #     """
