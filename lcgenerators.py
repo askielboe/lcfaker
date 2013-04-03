@@ -14,7 +14,7 @@ Summary:
 import numpy as np
 from LightCurve import LightCurve
 
-def getTestLightCurve():
+def getTestLightCurveSinglePeak():
     """
     Function for getting a test light curve
     """
@@ -24,6 +24,15 @@ def getTestLightCurve():
     ferr = np.zeros(len(time))
 
     return LightCurve(time, flux, ferr)
+
+def getTestLightCurveFewPoints():
+    """
+    Function for getting a test light curve
+    """
+    time = np.array([0., 1., 2., 3., 4., 5., 6., 7., 8., 9., 10.])
+    flux = np.array([0., 1., 2., 3., 4., 3., 2., 3., 2., 1.,  0.])
+    
+    return LightCurve(time, flux)
 
 def getLightCurveFromSpectra(spectra, minimum, maximum):
     """
