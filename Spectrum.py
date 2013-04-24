@@ -156,7 +156,7 @@ class Spectrum():
 
         return fit, fitError
 
-    def integrateLine(self, window, continuum=-1, continuumErr=-1):
+    def integrateLine(self, lineWindow=(), contWindow=[()]):
         """
         Subtracts continuum using straight line fit to two 20 A wide windows
         centered on 4840 and 5160.
@@ -169,11 +169,15 @@ class Spectrum():
         where the user defines integration limits, etc.
         """
 
-        # Set limits for HBeta line
-        mask = self.mask(4870, 5010)
+        if len(lineWindow) != 2:
+            raise ValueError('lineWindow must have length = 2')
+
+        # Set limits for the line
+        mask = self.mask(lineWindow[0],lineWindow[1])
 
         # Get parameter for the linear fit
-        fit, fitError = self.fitContinuum([(4600,4740),(4790,4840),(5130,5300)])
+        # EG: contWindow = [(4600,4740),(4790,4840),(5130,5300)]
+        fit, fitError = self.fitContinuum(contWindow)
 
         # Get polynomial based on fit parameters
         p = np.poly1d(fit)
@@ -190,8 +194,8 @@ class Spectrum():
         integralError = np.sqrt(np.sum(ferr**2.) + len(flux)*(fitError**2.))
 
         # Normalize to window size (getting flux per 2 AA) - Unnecessary?
-        integralFlux *= 1./len(flux)
-        integralError *= 1./len(flux)
+        #integralFlux *= 1./len(flux)
+        #integralError *= 1./len(flux)
 
         return integralFlux, integralError
 
