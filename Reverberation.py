@@ -107,7 +107,7 @@ class Reverberation():
         # Calculate mean CCF
         ccf = (ccf1 + ccf2) / 2.
 
-        return CCF(times, ccf2)
+        return CCF(times, ccf)
 
     def plot(self, marker='o', linestyle=''):
         """

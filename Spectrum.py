@@ -29,6 +29,9 @@ class Spectrum():
         self.flux = flux
         self.ferr = ferr
 
+        if len(self.ferr) == 0:
+            self.ferr = np.zeros(len(self.wavelength))
+
     def mask(self, minimum, maximum=-1):
         if maximum == -1:
             maximum = minimum
@@ -86,7 +89,7 @@ class Spectrum():
 
     def fitContinuum(self, windows):
         """
-        Fits the continuum using a 2nd degree polynomial using wavelength windows.
+        Fits the continuum using a straight line using wavelength windows.
         Input: List of tuples defining the wavelength windows.
         Example: fitContinuumInWindows([(4600,4740),(4790,4840),(5130,5300)])
         """
@@ -100,7 +103,7 @@ class Spectrum():
         ferr = self.ferr[mask]
 
         # Fit a polynomial
-        fit = np.polyfit(wavelength, flux, 2)
+        fit = np.polyfit(wavelength, flux, 1)
 
         # Calculate error from the continuum fit
         # using the average error in the bins used
