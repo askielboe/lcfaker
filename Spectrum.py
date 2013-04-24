@@ -70,6 +70,50 @@ class Spectrum():
     #     self.flux = data.T[1]
     #     self.ferr = data.T[2]
 
+    def getSNR(self, minWavelength, maxWavelength):
+        """
+        Return estimated signal to noise per spectral bin,
+        assuming a flat continuum within given wavelength ranges
+        Input: Wavelength range given by min, max of flat continuum
+        Output: Estimated signal to noise per spectral bin
+        """
+        mask = self.mask(minWavelength, maxWavelength)
+        wavelength = self.wavelength[mask]
+        flux = self.flux[mask]
+        ferr = self.ferr[mask]
+
+        # Remove possible slope from data by subtracting a straight line fit
+        fit = np.polyfit(wavelength, flux, 1)
+        p = np.poly1d(fit)
+
+        slope = fit[0]
+
+        # Rotate data about the pivot point, as to remove the slope
+        # If we have an even numper of data points the pivot point is between two datapoints
+        # and we should take this into account
+        if len(wavelength) % 2 == 0:
+            iLeft = len(wavelength)/2
+            iRight = len(wavelength)/2 + 1
+            pivotFlux = p((wavelength[iLeft] + wavelength[iRight]) / 2.)
+
+            flux[:iLeft] += np.sign(slope) * np.abs(p(wavelength[:iLeft]) - pivotFlux)
+            flux[iRight:] -= np.sign(slope) * np.abs(p(wavelength[iRight:]) - pivotFlux)
+
+        # If we have an uneven number of datapoints, the pivot point is on top of a datapoints,
+        # and this point should not be altered
+        elif len(wavelength) % 2 > 0:
+            iLeft = len(wavelength)/2
+            iRight = len(wavelength)/2 + 2
+            iMiddle = len(wavelength)/2 + 1
+            pivotFlux = p(wavelength[iMiddle])
+
+            flux[:iLeft] += np.sign(slope) * np.abs(p(wavelength[:iLeft]) - pivotFlux)
+            flux[iRight:] -= np.sign(slope) * np.abs(p(wavelength[iRight:]) - pivotFlux)
+
+        snr = np.mean(flux)/np.std(flux)
+
+        return snr
+
     def integrate(self, minWavelength, maxWavelength):
         """
         Simple Riemann integration, summing bins.
