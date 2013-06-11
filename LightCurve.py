@@ -17,9 +17,10 @@ class LightCurve():
 
     def __init__(self, time=np.array([]), flux=np.array([]), ferr=np.array([]), label='lightcurve'):
 
-        self.time = time
-        self.flux = flux
-        self.ferr = ferr
+        # Sort values according to time
+        self.flux = np.array([f for (t,f) in sorted(zip(time,flux))])
+        self.ferr = np.array([fe for (t,fe) in sorted(zip(time,ferr))])
+        self.time = np.sort(time)
         self._label = label
 
     @property
@@ -262,7 +263,7 @@ class LightCurve():
             print "ERROR: Unknown unit"
             return
 
-        plt.plot(self.time, y, marker+color, label=label)
+        plt.errorbar(self.time, y, self.ferr, fmt=marker+color, label=label)
         plt.legend(frameon=False)
         #plt.savefig('lightcurve.pdf')
         plt.show()

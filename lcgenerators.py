@@ -34,38 +34,107 @@ def getTestLightCurveFewPoints():
 
     return LightCurve(time, flux)
 
-def getLightCurveFromSpectra(spectra, minimum, maximum):
+def generateLightCurves(spectra, getErrors, contUnderLine=0):
     """
-    Generates the lightcurve of integrated flux within limits defined by minimum and maximum
-    For continuum, could be (from previous getLightCurveCont() function):
-    minimum = 5183
-    maximum = 5193
+    Gets lightcurve from spectra using the line and continuum windows
+    defined in the Sprctrum instance
+    Output: LightCurve instance
     """
     time = np.zeros(len(spectra))
-    flux = np.zeros(len(spectra))
-    ferr = np.zeros(len(spectra))
+    fluxCont = np.zeros(len(spectra))
+    ferrCont = np.zeros(len(spectra))
+    fluxLine = np.zeros(len(spectra))
+    ferrLine = np.zeros(len(spectra))
 
     for i,spectrum in enumerate(spectra):
         time[i] = spectrum.date
-        flux[i], ferr[i] = spectrum.integrate(minimum, maximum)
+        int = spectrum.integrateLine(getErrors = getErrors)
+        (fluxLine[i], ferrLine[i], fluxContUnderLine, ferrContUnderLine) = int
+        if contUnderLine:
+            fluxCont[i], ferrCont[i] = (fluxContUnderLine, ferrContUnderLine)
+        else:
+            fluxCont[i], ferrCont[i] = spectrum.integrateContinuum(getErrors = getErrors)
 
-    return LightCurve(time, flux, ferr)
 
-def getLightCurveFromSpectraHBeta(spectra):
+    lightCurveLine = LightCurve(time, fluxLine, ferrLine)
+    lightCurveCont = LightCurve(time, fluxCont, ferrCont)
+
+    #self.lightcurves["line"] = lightCurveLine
+    #self.lightcurves["cont"] = lightCurveCont
+
+    return lightCurveLine, lightCurveCont
+
+def generateLightCurveLine(spectra, getErrors = 1):
     """
-    Generates a lightcurve from integrating the HBeta line in a series of spectra.
-    Input: List of spectra instances.
-    Output: Lightcurve instance.
+    Gets lightcurve from spectra using the line and continuum windows
+    defined in the Sprctrum instance
+    Output: LightCurve instance
     """
     time = np.zeros(len(spectra))
-    flux = np.zeros(len(spectra))
-    ferr = np.zeros(len(spectra))
+    fluxLine = np.zeros(len(spectra))
+    ferrLine = np.zeros(len(spectra))
 
-    for i, spectrum in enumerate(spectra):
+    for i,spectrum in enumerate(spectra):
         time[i] = spectrum.date
-        flux[i], ferr[i] = spectrum.integrateHBeta()
+        int = spectrum.integrateLine(getErrors = getErrors)
+        (fluxLine[i], ferrLine[i], fluxContUnderLine, ferrContUnderLine) = int
 
-    return LightCurve(time, flux, ferr)
+    lightCurveLine = LightCurve(time, fluxLine, ferrLine)
+
+    return lightCurveLine
+
+def generateLightCurveCont(spectra, getErrors = 1):
+    """
+    Gets lightcurve from spectra using the line and continuum windows
+    defined in the Sprctrum instance
+    Output: LightCurve instance
+    """
+    time = np.zeros(len(spectra))
+    fluxCont = np.zeros(len(spectra))
+    ferrCont = np.zeros(len(spectra))
+
+    for i,spectrum in enumerate(spectra):
+        time[i] = spectrum.date
+        fluxCont[i], ferrCont[i] = spectrum.integrateContinuum(getErrors = getErrors)
+
+    lightCurveCont = LightCurve(time, fluxCont, ferrCont)
+
+    return lightCurveCont
+
+# def getLightCurveFromSpectra(spectra, params):
+#     """
+#     Generates the lightcurve of integrated flux within limits defined by minimum and maximum
+#     For continuum, could be (from previous getLightCurveCont() function):
+#     minimum = 5183
+#     maximum = 5193
+#     """
+#     time = np.zeros(len(spectra))
+#     flux = np.zeros(len(spectra))
+#     ferr = np.zeros(len(spectra))
+
+#     for i,spectrum in enumerate(spectra):
+#         time[i] = spectrum.date
+#         int = spectrum.integrateLine(minimum, maximum)
+#         (integralFluxLine, integralErrorLine, integralFluxCont, integralErrorCont) = int
+#         flux[i], ferr[i] = spectrum.integrate(minimum, maximum)
+
+#     return LightCurve(time, flux, ferr)
+
+# def getLightCurveFromSpectraHBeta(spectra):
+#     """
+#     Generates a lightcurve from integrating the HBeta line in a series of spectra.
+#     Input: List of spectra instances.
+#     Output: Lightcurve instance.
+#     """
+#     time = np.zeros(len(spectra))
+#     flux = np.zeros(len(spectra))
+#     ferr = np.zeros(len(spectra))
+
+#     for i, spectrum in enumerate(spectra):
+#         time[i] = spectrum.date
+#         flux[i], ferr[i] = spectrum.integrateHBeta()
+
+#     return LightCurve(time, flux, ferr)
 
 def syntheticLightCurveWiener(nBins):
     """

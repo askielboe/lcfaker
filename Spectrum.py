@@ -29,6 +29,14 @@ class Spectrum():
         self.flux = flux
         self.ferr = ferr
 
+        # Parameters specific to emission line diagnostics
+        # FIXME: Add support for multiple emission/absorption lines
+        self.snrWindow = ()
+        self.lineIntWindow = ()
+        self.contIntWindow = ()
+        self.contFitWindow = [()]
+        self.oiiiWindow = ()
+
         if len(self.ferr) == 0:
             self.ferr = np.zeros(len(self.wavelength))
 
@@ -39,8 +47,30 @@ class Spectrum():
         mask *= self.wavelength <= maximum
         return mask
 
-    def plot(self):
+    def plot(self, showWindows=1, showContFit=1, saveFig=0):
         plt.figure()
+
+        if showWindows:
+            # Plot integration windows
+            # FIXME: Use error handler instead of in-line exceptions!
+            self.errorHandle("windows")
+
+            plt.plot([self.lineIntWindow[0],self.lineIntWindow[0]], [min(self.flux),max(self.flux)], color='r')
+            plt.plot([self.lineIntWindow[1],self.lineIntWindow[1]], [min(self.flux),max(self.flux)], color='r')
+
+            for window in self.contFitWindow:
+                plt.plot([window[0],window[0]], [min(self.flux),max(self.flux)], color='g')
+                plt.plot([window[1],window[1]], [min(self.flux),max(self.flux)], color='g')
+
+        if showContFit:
+            self.errorHandle("windows")
+
+            fitMean, fitCov = self.fitContinuum(self.contFitWindow)
+
+            x = np.arange(min(self.wavelength), max(self.wavelength), 1.0)
+            y = fitMean[0] * x + fitMean[1]
+
+            plt.plot(x,y)
 
         # Plot errorbars if we have them
         if len(self.ferr) > 0:
@@ -52,7 +82,12 @@ class Spectrum():
         plt.xlabel('wavelength')
         plt.ylabel('flux')
 
-        plt.show()
+        if saveFig:
+            plt.xlim((4550,5450))
+            plt.ylim((0.0, 1.0e-13))
+            plt.savefig('tmp/spec_'+str(self.date)+'.jpg')
+        else:
+            plt.show()
 
     # def loadData(self, filename):
     #     """
@@ -63,24 +98,40 @@ class Spectrum():
     #     """
     #     self.name = filename.split('/')[-1]
     #     self.date = self.name[2:6]
-    #
+
     #     data = np.loadtxt(filename)
-    #
+
     #     self.wavelength = data.T[0]
     #     self.flux = data.T[1]
     #     self.ferr = data.T[2]
 
-    def getSNR(self, minWavelength, maxWavelength):
+    def getSNR(self, minWavelength = -1, maxWavelength = -1):
         """
         Return estimated signal to noise per spectral bin,
         assuming a flat continuum within given wavelength ranges
         Input: Wavelength range given by min, max of flat continuum
         Output: Estimated signal to noise per spectral bin
         """
-        mask = self.mask(minWavelength, maxWavelength)
-        wavelength = self.wavelength[mask]
-        flux = self.flux[mask]
-        ferr = self.ferr[mask]
+
+        def getMaskedData(minWavelength, maxWavelength):
+            mask = self.mask(minWavelength, maxWavelength)
+            wavelength = self.wavelength[mask]
+            flux = self.flux[mask]
+            ferr = self.ferr[mask]
+            return wavelength, flux, ferr
+
+        if minWavelength == -1 or maxWavelength == -1:
+            minWavelength = self.snrWindow[0]
+            maxWavelength = self.snrWindow[1]
+
+        wavelength, flux, ferr = getMaskedData(minWavelength, maxWavelength)
+
+        # If the resolution is low, or the window too narrow, post a warning and increase window size
+        while len(wavelength) < 3:
+            print "\n Spectrum.getSNR: WARNING: Resolution / WindowSize too low! Increasing window size.. \n"
+            minWavelength = minWavelength - (maxWavelength - minWavelength) / 2
+            maxWavelength = maxWavelength + (maxWavelength - minWavelength) / 2
+            wavelength, flux, ferr = getMaskedData(minWavelength, maxWavelength)
 
         # Remove possible slope from data by subtracting a straight line fit
         fit = np.polyfit(wavelength, flux, 1)
@@ -89,7 +140,7 @@ class Spectrum():
         slope = fit[0]
 
         # Rotate data about the pivot point, as to remove the slope
-        # If we have an even numper of data points the pivot point is between two datapoints
+        # If we have an even number of data points the pivot point is between two datapoints
         # and we should take this into account
         if len(wavelength) % 2 == 0:
             iLeft = len(wavelength)/2
@@ -99,7 +150,7 @@ class Spectrum():
             flux[:iLeft] += np.sign(slope) * np.abs(p(wavelength[:iLeft]) - pivotFlux)
             flux[iRight:] -= np.sign(slope) * np.abs(p(wavelength[iRight:]) - pivotFlux)
 
-        # If we have an uneven number of datapoints, the pivot point is on top of a datapoints,
+        # If we have an uneven number of datapoints, the pivot point is on top of a datapoint,
         # and this point should not be altered
         elif len(wavelength) % 2 > 0:
             iLeft = len(wavelength)/2
@@ -114,32 +165,32 @@ class Spectrum():
 
         return snr
 
-    def integrate(self, minWavelength, maxWavelength):
-        """
-        Simple Riemann integration, summing bins.
-        """
-        mask = self.mask(minWavelength, maxWavelength)
+        # """
+        # Simple Riemann integration, summing bins.
+        # """
+        # mask = self.mask(minWavelength, maxWavelength)
 
-        flux = self.flux[mask]
-        ferr = self.ferr[mask]
+        # flux = self.flux[mask]
+        # ferr = self.ferr[mask]
 
-        integralFlux = np.sum(flux)
-        integralError = np.sqrt(np.sum(ferr**2.))
+        # integralFlux = np.sum(flux)
+        # integralError = np.sqrt(np.sum(ferr**2.))
 
-        integralFlux *= 1./len(flux)
-        integralError *= 1./len(flux)
+        # integralFlux *= 1./len(flux)
+        # integralError *= 1./len(flux)
 
-        return integralFlux, integralError
+        # return integralFlux, integralError
 
-    def fitContinuum(self, windows):
+    def fitContinuum(self, contFitWindow=[()]):
         """
         Fits the continuum using a straight line using wavelength windows.
         Input: List of tuples defining the wavelength windows.
         Example: fitContinuumInWindows([(4600,4740),(4790,4840),(5130,5300)])
+        Output: (fit parameters), (std of fit parameters based on cov matrix)
         """
         # Pick out the values we want to fit, from the complete spectrum
         mask = self.mask(-1)
-        for window in windows:
+        for window in contFitWindow:
             mask += self.mask(window[0],window[1])
 
         wavelength = self.wavelength[mask]
@@ -147,96 +198,173 @@ class Spectrum():
         ferr = self.ferr[mask]
 
         # Fit a polynomial
-        fit = np.polyfit(wavelength, flux, 1)
+        fitMean, fitCov = np.polyfit(wavelength, flux, 1, cov=True)
 
-        # Calculate error from the continuum fit
-        # using the average error in the bins used
-        # divided by sqrt(numberOfBins)
-        fitError = np.mean(ferr) / np.sqrt(len(flux))
+        return fitMean, fitCov
 
-        return fit, fitError
-
-    def integrateLine(self, lineWindow=(), contWindow=[()]):
+    def integrateContinuum(self, contIntWindow=(), getErrors = 1, verbose = 0):
         """
-        Subtracts continuum using straight line fit to two 20 A wide windows
-        centered on 4840 and 5160.
+        Calculates the flux integral of the given wavelength range
+        without subtracting any continuum
+        """
+        if contIntWindow == ():
+            contIntWindow = self.contIntWindow
 
-        The total broad HB flux time series is obtained by summing
-        all flux above an interpolated continuum in
-        the observed wavelength band 4870-5010 A.
+        self.errorHandle("contIntWindow")
 
-        TODO: Make more general line integration method,
-        where the user defines integration limits, etc.
+        # Pick out the values we want to fit, from the complete spectrum
+        mask = self.mask(contIntWindow[0],contIntWindow[1])
+
+        wavelength = self.wavelength[mask]
+        flux = self.flux[mask]
+        ferr = self.ferr[mask]
+
+        aangstorms = np.max(wavelength) - np.min(wavelength)
+        integralFluxCont = np.sum(flux) / aangstorms
+        integralErrorCont = np.sqrt(np.sum(ferr**2.)) / aangstorms
+
+        if verbose:
+            print "continuum flux = ", integralFluxCont, " +/- ", integralErrorCont
+            print "relative error cont flux (percent) = ", integralErrorCont/integralFluxCont * 100.0
+            print "=================================================================="
+
+        return integralFluxCont, integralErrorCont
+
+    def integrateLine(self, getErrors = 1, verbose = 0, weight='uniform'):
+        """
+        Calculated integral flux by subtracting linearly interpolated continuum.
+        Returns line flux and errer as well as estimated continuum flux and error.
         """
 
-        if len(lineWindow) != 2:
-            raise ValueError('lineWindow must have length = 2')
+        self.errorHandle("windows")
 
         # Set limits for the line
-        mask = self.mask(lineWindow[0],lineWindow[1])
+        mask = self.mask(self.lineIntWindow[0],self.lineIntWindow[1])
 
         # Get parameter for the linear fit
-        # EG: contWindow = [(4600,4740),(4790,4840),(5130,5300)]
-        fit, fitError = self.fitContinuum(contWindow)
+        # EG: contFitWindow = [(4600,4740),(4790,4840),(5130,5300)]
+        fitMean, fitCov = self.fitContinuum(self.contFitWindow)
+        if verbose:
+            print "cont fitMean = ", fitMean
+            print "cont fitCov = ", fitCov
 
         # Get polynomial based on fit parameters
-        p = np.poly1d(fit)
+        p = np.poly1d(fitMean)
 
         # Limit data to the HBeta line
         wavelength = self.wavelength[mask]
         flux = self.flux[mask]
         ferr = self.ferr[mask]
 
-        # Calculate the integral flux with continuum subtracted
-        integralFlux = np.sum(flux - p(wavelength))
+        # Calculate the integral continuum
+        # Remember the fit only makes sense at the wavelength bins given in the spectrum,
+        # as non-constant bin widths are fitted as well.
+        # Beware: THE FIT SHOULD ONLY BE EVALUATED AT BIN CENTERS GIVEN IN THE SPECTRUM
+        # NO INTEGRALS, ETC.!
+        integralFluxCont = np.sum(p(wavelength))
 
-        # Calculate the error for the line integration
-        integralError = np.sqrt(np.sum(ferr**2.) + len(flux)*(fitError**2.))
+        # Calculate the integral line flux with continuum subtracted
+        # Weigh each wavelength bin according to Horne (1986)' optimal extraction algorithm
+        if weight == 'horne':
+            # Weights based on Horne (1986)
+            fractionalFlux = flux / np.sum(flux)
+            w = (fractionalFlux / ferr)**2.
+            flux = np.sum(fractionalFlux * flux / ferr**2.) / np.sum(w)
+            ferr = np.sqrt(1./np.sum(w))
+        elif weight == 'uniform':
+            pass
 
-        # Normalize to window size (getting flux per 2 AA) - Unnecessary?
-        #integralFlux *= 1./len(flux)
-        #integralError *= 1./len(flux)
+        integralFluxLine = (np.sum(flux) - integralFluxCont)
 
-        return integralFlux, integralError
+        if getErrors == 1:
+            # Calculate the error for the line integration using Monte Carlo
+            # (avoids problems with uneven bin sizes)
+            nSamples = 200
 
-    def integrateHBeta(self):
-        """
-        Subtracts continuum using straight line fit to two 20 A wide windows
-        centered on 4840 and 5160.
+            # Draw fit parameters based on variance from the fit
+            a, b = np.random.multivariate_normal(mean=fitMean, cov=fitCov, size=nSamples).T
+            integrals = []
+            for i in range(nSamples):
+                integrals.append(np.sum(a[i] * wavelength + b[i]))
 
-        The total broad HB flux time series is obtained by summing
-        all flux above an interpolated continuum in
-        the observed wavelength band 4870-5010 A.
+            if verbose:
+                print "np.mean(integrals) = ", np.mean(integrals)
+                print "np.std(integrals) = ", np.std(integrals)
 
-        TODO: Make more general line integration method,
-        where the user defines integration limits, etc.
-        """
+            integralErrorCont = np.std(integrals)
+            integralErrorLine = np.sqrt(np.sum(ferr**2.) + integralErrorCont**2.)
+        else:
+            integralErrorCont = 0.0
+            integralErrorLine = 0.0
 
-        # Set limits for HBeta line
-        mask = self.mask(4870, 5010)
+        if verbose:
+            print "line flux = ", integralFluxLine, " +/- ", integralErrorLine
+            print "continuum flux = ", integralFluxCont, " +/- ", integralErrorCont
+            print "relative error line flux (percent) = ", integralErrorLine/integralFluxLine * 100.0
+            print "relative error cont flux (percent) = ", integralErrorCont/integralFluxCont * 100.0
+            print "=================================================================="
 
-        # Get parameter for the linear fit
-        fit, fitError = self.fitContinuum([(4600,4740),(4790,4840),(5130,5300)])
+        return integralFluxLine, integralErrorLine, integralFluxCont, integralErrorCont
 
+    def calibrateToOIII(self):
+        # WORK IN PROGRESS!
         # Get polynomial based on fit parameters
-        p = np.poly1d(fit)
+        fitMean, fitCov = self.fitContinuum(self.contFitWindow)
+        p = np.poly1d(fitMean)
 
-        # Limit data to the HBeta line
+        # Limit data to the OIII line
+        mask = self.mask(self.oiiiWindow[0],self.oiiiWindow[1])
         wavelength = self.wavelength[mask]
         flux = self.flux[mask]
         ferr = self.ferr[mask]
 
-        # Calculate the integral flux with continuum subtracted
-        integralFlux = np.sum(flux - p(wavelength))
+        integralOIII = np.sum(flux) - np.sum(p(wavelength))
 
-        # Calculate the error for the line integration
-        integralError = np.sqrt(np.sum(ferr**2.) + len(flux)*(fitError**2.))
+        self.flux /= integralOIII
 
-        # Normalize to window size (getting flux per 2 AA) - Unnecessary?
-        integralFlux *= 1./len(flux)
-        integralError *= 1./len(flux)
+    # TO BE DELETED!
+    # def integrateHBeta(self):
+    #     """
+    #     NOTE: THIS ONLY WORKS ON WANDERS & PETERSON!
+    #     Subtracts continuum using straight line fit to two 20 A wide windows
+    #     centered on 4840 and 5160.
 
-        return integralFlux, integralError
+    #     The total broad HB flux time series is obtained by summing
+    #     all flux above an interpolated continuum in
+    #     the observed wavelength band 4870-5010 A.
+
+    #     TODO: Make more general line integration method,
+    #     where the user defines integration limits, etc.
+    #     """
+
+    #     integralFluxLine, integralErrorLine, integralFluxCont, integralErrorCont = self.integrateLine(
+    #         lineIntWindow=(4870, 5010), contFitWindow=[(4600,4740),(4790,4840),(5130,5300)])
+
+    #     # # Set limits for HBeta line
+    #     # mask = self.mask(4870, 5010)
+
+    #     # # Get parameter for the linear fit
+    #     # fit, fitError = self.fitContinuum([(4600,4740),(4790,4840),(5130,5300)])
+
+    #     # # Get polynomial based on fit parameters
+    #     # p = np.poly1d(fit)
+
+    #     # # Limit data to the HBeta line
+    #     # wavelength = self.wavelength[mask]
+    #     # flux = self.flux[mask]
+    #     # ferr = self.ferr[mask]
+
+    #     # # Calculate the integral flux with continuum subtracted
+    #     # integralFlux = np.sum(flux - p(wavelength))
+
+    #     # # Calculate the error for the line integration
+    #     # integralError = np.sqrt(np.sum(ferr**2.) + len(flux)*(fitError**2.))
+
+    #     # Normalize to window size (getting flux per 2 AA) - Unnecessary?
+    #     #integralFlux *= 1./len(flux)
+    #     #integralError *= 1./len(flux)
+
+    #     return integralFluxLine, integralErrorLine
 
     def addNoiseGaussian(self, snr):
         """
@@ -255,12 +383,15 @@ class Spectrum():
         std_noise = np.sqrt(squaredError)
         noise = std_noise * np.random.randn(len(self.flux))
 
-        wavelength = self.wavelength.copy()
-        flux = self.flux + noise
-        ferr = np.sqrt(self.ferr**2. + std_noise**2.)
-        date = self.date
+        #wavelength = self.wavelength.copy()
+        self.flux = self.flux + noise
+        self.ferr = np.sqrt(self.ferr**2. + std_noise**2.)
+        #date = self.date
 
-        return Spectrum(wavelength = wavelength, flux = flux, ferr = ferr, date = date)
+        #spectrum =
+
+
+        #return Spectrum(wavelength = wavelength, flux = flux, ferr = ferr, date = date)
 
     def fit(self, minWavelength, maxWavelength, doplot=0):
         """
@@ -308,6 +439,16 @@ class Spectrum():
             plot()
 
         return plsq
+
+    def errorHandle(self, error):
+        """
+        Internal function for handling errors.
+        """
+        if error == "windows":
+            if self.lineIntWindow == () or self.contIntWindow == () or self.contFitWindow == [()]:
+                raise ValueError('Must define all integration windows (lineInt, contInt and contFit)!')
+            if len(self.lineIntWindow) != 2:
+                raise ValueError('lineIntWindow must have length == 2')
 
     def __repr__(self):
         return "Spectrum Instance: Spectrum wavelength range: " \
