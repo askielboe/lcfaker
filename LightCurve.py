@@ -61,7 +61,7 @@ class LightCurve():
         self.flux = self.flux[:-length]
 
     def lag_const(self, lag_const):
-        print "Running lag_const.."
+        #print "Running lag_const.."
         self.time = self.time + lag_const
         return None
 
@@ -126,7 +126,8 @@ class LightCurve():
             self.flux += noise
             self.ferr = np.sqrt(self.ferr**2. + std_noise**2.)
 
-        elif len(self.ferr) == 0:
+        # If no error information is available, create new noise
+        elif len(self.ferr) == 0 or True in (self.ferr != np.zeros(len(self.ferr))):
             std_noise = self.flux / snr
             noise = std_noise * np.random.randn(len(self.flux))
 
@@ -222,6 +223,7 @@ class LightCurve():
 
         timeObserved = []
         fluxObserved = []
+        ferrObserved = []
 
         # Calculate observing times
         cadence = len(self.time)/float(nObs)
@@ -230,15 +232,16 @@ class LightCurve():
         # Add random shift to obsTimes
         obsTimes += np.random.rand()*cadence
         obsTimes = np.round(obsTimes)
-
         obsTimes = obsTimes[obsTimes < len(self.time)]
 
         for t in obsTimes:
             timeObserved.append(self.time[t])
             fluxObserved.append(self.flux[t])
+            ferrObserved.append(self.ferr[t])
 
         lcObserved.time = np.asarray(timeObserved)
         lcObserved.flux = np.asarray(fluxObserved)
+        lcObserved.ferr = np.asarray(ferrObserved)
 
         # Adding noise
         if snr > -1:
@@ -263,7 +266,11 @@ class LightCurve():
             print "ERROR: Unknown unit"
             return
 
-        plt.errorbar(self.time, y, self.ferr, fmt=marker+color, label=label)
+        if len(self.ferr) == len(self.flux):
+            plt.errorbar(self.time, y, self.ferr, fmt=marker+color, label=label)
+        else:
+            plt.plot(self.time, y, marker=marker, label=label)
+
         plt.legend(frameon=False)
         #plt.savefig('lightcurve.pdf')
         plt.show()

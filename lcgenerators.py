@@ -167,10 +167,10 @@ def syntheticLightCurveOU(nBins):
     return LightCurve(lc.T[0], lc.T[1])
 
 def syntheticLightCurveMacLeod(nDays = 200, maxDays = 200.0, \
-                                magApparant = 19, magAbsolute = -24.0, \
+                                magApparant = 18, magAbsolute = -22.5, \
                                 mass = 1.0e9, \
                                 lambdarf = 5100.0, \
-                                z = 0.5, dist = 1.0e6):
+                                z = 0.2, dist = 1.0e6):
     """
     Function to generate lightcurve based on damped random walk
     using equations from MacLeod et al.
@@ -229,4 +229,10 @@ def syntheticLightCurveMacLeod(nDays = 200, maxDays = 200.0, \
     # Convert from magnitude to flux
     flux = magi_to_fluxJy(mag)
 
-    return LightCurve(time, flux)
+    # Normalize flux
+    flux = flux / np.max(flux)
+
+    # Add zero-noise
+    ferr = np.zeros(len(flux))
+
+    return LightCurve(time, flux, ferr)
