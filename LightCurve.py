@@ -181,7 +181,7 @@ class LightCurve():
 
         # If chosen time is outside self time raise an exception
         if np.any(tInter < min(self.time)) or np.any(tInter > max(self.time)):
-            raise ValueError('Time for interpolation outside data range.')
+            raise ValueError('Time for interpolation outside data range. tInter = '+str(tInter)+', minTime = '+str(min(self.time))+', maxTime = '+str(max(self.time)))
 
         # Otherwise we do interpolation
         # First calculate slope between all points

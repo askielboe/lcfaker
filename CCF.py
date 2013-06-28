@@ -31,7 +31,9 @@ class CCF():
         try:
             return center
         except UnboundLocalError:
-            raise ValueError('ERROR: Could not find CCF center!')
+            return 0.0
+            print 'WARNING: Could not find CCF center! - Returning 0.0.'
+            #raise ValueError('ERROR: Could not find CCF center!')
 
     def plot(self):
         plt.figure()

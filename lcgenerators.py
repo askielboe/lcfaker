@@ -179,16 +179,16 @@ def syntheticLightCurveMacLeod(nDays = 200, maxDays = 200.0, \
     from lib.ouprocess import OUprocess
     from lib.units import magi_to_fluxJy
 
-    print "Generating synthetic light curve using method described in MacLeod et al."
-    print "Parameters:"
-    print "nDays = ", nDays
-    print "maxDays = ", maxDays
-    print "magApparant = ", magApparant
-    print "magAbsolute = ", magAbsolute
-    print "mass = ", mass
-    print "lamdarf = ", lambdarf
-    print "z = ", z
-    print "dist = ", dist
+    # print "Generating synthetic light curve using method described in MacLeod et al."
+    # print "Parameters:"
+    # print "nDays = ", nDays
+    # print "maxDays = ", maxDays
+    # print "magApparant = ", magApparant
+    # print "magAbsolute = ", magAbsolute
+    # print "mass = ", mass
+    # print "lamdarf = ", lambdarf
+    # print "z = ", z
+    # print "dist = ", dist
 
     magApparant = 5.0 * np.log10(dist) - 5.0 + magAbsolute
 
