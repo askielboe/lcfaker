@@ -27,6 +27,12 @@ class Reverberation():
         self.lcCont = lcCont
         self.lcLine = lcLine
 
+    def observeConstantCadence(self, nObsCont, nObsLine):
+        self.trim()
+
+        self.lcCont = self.lcCont.observeConstantCadence(nObsCont)
+        self.lcLine = self.lcLine.observeConstantCadence(nObsLine)
+
     def getCrossCorrelationFunction(self, minLag=-50, maxLag=100, resLag=1):
         """
         Returns a cross correlation function (CCF) instance of a CCF class.
@@ -109,7 +115,7 @@ class Reverberation():
 
         return CCF(times, ccf)
 
-    def plot(self, marker='o', linestyle=''):
+    def plot(self, marker='+', linestyle='-'):
         """
         Function to plot two lightcurves
         """
