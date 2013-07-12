@@ -181,7 +181,7 @@ class LightCurve():
 
         # If chosen time is outside self time raise an exception
         if np.any(tInter < min(self.time)) or np.any(tInter > max(self.time)):
-            raise ValueError('Time for interpolation outside data range. tInter = '+str(tInter)+', minTime = '+str(min(self.time))+', maxTime = '+str(max(self.time)))
+            raise ValueError('Time for interpolation outside data range. \n mintInt = '+str(min(tInter))+' maxtInt = '+str(max(tInter))+', \n minTime = '+str(min(self.time))+', maxTime = '+str(max(self.time)))
 
         # Otherwise we do interpolation
         # First calculate slope between all points
@@ -217,7 +217,8 @@ class LightCurve():
         """
 
         if nObs > len(self.time):
-            raise ValueError('Number of observations larger than available data! Please choose a lower nObs.')
+            raise ValueError('Number of observations larger than available data! Please choose a lower nObs. \n \
+                nObs = '+str(nObs)+' nDays = '+str(self.time))
 
         lcObserved = LightCurve()
 
@@ -226,13 +227,16 @@ class LightCurve():
         ferrObserved = []
 
         # Calculate observing times
-        cadence = len(self.time)/float(nObs)
+        try:
+            cadence = len(self.time)/float(nObs)
+        except ZeroDivisionError:
+            raise ZeroDivisionError("len(self.time) / float(nObs) = "+str(len(self.time))+"/"+str(float(nObs)))
         obsTimes = np.arange(0.,len(self.time)-1,cadence)
 
         # Add random shift to obsTimes
-        obsTimes += np.random.rand()*cadence
-        obsTimes = np.round(obsTimes)
-        obsTimes = obsTimes[obsTimes < len(self.time)]
+        #obsTimes += np.random.rand()*cadence
+        #obsTimes = np.round(obsTimes)
+        #obsTimes = obsTimes[obsTimes < len(self.time)]
 
         for t in obsTimes:
             timeObserved.append(self.time[t])
