@@ -34,20 +34,30 @@ class LightCurve():
         mask *= arr <= maximum
         return mask
 
-    def smooth(self, sigma=1.5):
+    def smooth(self, sigma=1.5, type='gaus'):
         import numpy as np
         import scipy.signal as signal
 
         length = int(sigma*10)
 
-        def gauss_kern(sigma=1.5):
+        def gauss_kern(sigma):
             """ Returns a normalized 1D gauss kernel array for convolutions """
             x = np.array(range(length))
             x = x-length/2.
             g = np.exp( -( x**2. ) / (2.*sigma**2.) );
             return g / g.sum()
 
-        g = gauss_kern(sigma)
+        def lorentz_kern(sigma):
+            """ Returns a normalized 1D gauss kernel array for convolutions """
+            x = np.array(range(length))
+            x = x-length/2.
+            g = 1/np.pi * sigma / (x**2. + sigma**2.);
+            return g / g.sum()
+
+        if type == 'gaus':
+            g = gauss_kern(sigma)
+        elif type == 'lorentz':
+            g = lorentz_kern(sigma)
 
         # To convolve close to boundaries we need to extrapolate beyond the boundaries
         # Constant extrapolation using only the values at the boundaries
