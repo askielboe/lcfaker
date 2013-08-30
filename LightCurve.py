@@ -54,10 +54,49 @@ class LightCurve():
             g = 1/np.pi * sigma / (x**2. + sigma**2.);
             return g / g.sum()
 
+        def mrk50_transfer_function_1():
+            norm = 31.3044
+            a = 4.84766
+            b = -0.392628
+            c = -0.129766
+
+            x = np.arange(1.0, 25.1, 1.0)
+            y = 1./norm * a * np.exp(b * x ** -2.0 + c*x)
+            y = np.concatenate((np.zeros(1),y))
+
+            # Add zeros before t = 0 (causality)
+            zeros = np.zeros(25)
+            x = np.arange(-25.0, 25.1, 1.0)
+            y = np.concatenate((zeros,y))
+
+            length = len(x)
+            return y, length
+
+        def mrk50_transfer_function_2():
+            norm = 33.3227
+            a = 1.75
+            b = 0.825
+            c = 0.219
+
+            x = np.arange(0., 25.1, 1.0)
+            y = 1./norm * a * x**2. / (b + x*np.exp(c*x))
+
+            # Add zeros before t = 0 (causality)
+            zeros = np.zeros(25)
+            x = np.arange(-25.0, 25.1, 1.0)
+            y = np.concatenate((zeros,y))
+
+            length = len(x)
+            return y, length
+
         if type == 'gaus':
             g = gauss_kern(sigma)
         elif type == 'lorentz':
             g = lorentz_kern(sigma)
+        elif type == 'mrk50_1':
+            g, length = mrk50_transfer_function_1()
+        elif type == 'mrk50_2':
+            g, length = mrk50_transfer_function_2()
 
         # To convolve close to boundaries we need to extrapolate beyond the boundaries
         # Constant extrapolation using only the values at the boundaries
@@ -228,7 +267,7 @@ class LightCurve():
 
         if nObs > len(self.time):
             raise ValueError('Number of observations larger than available data! Please choose a lower nObs. \n \
-                nObs = '+str(nObs)+' nDays = '+str(self.time))
+                nObs = '+str(nObs)+' nDays = '+str(len(self.time)))
 
         lcObserved = LightCurve()
 
