@@ -15,14 +15,20 @@ class CCF():
         if threshold == -1:
             threshold = self.threshold
 
-        mask = self.ccf >= threshold*max(self.ccf)
-        ccfCut = self.ccf[mask]
-        timesCut = self.time[mask]
+        try:
+            mask = self.ccf >= threshold*max(self.ccf)
+            ccfCut = self.ccf[mask]
+            timesCut = self.time[mask]
+        except ValueError:
+            return -9999
 
         # If we don't have a well defined maximum in the CFF return -9999
-        mask = self.ccf >= 0.7*max(self.ccf)
-        timesAboveCut = self.time[mask]
-        if max(timesAboveCut) - min(timesAboveCut) > 20:
+        try:
+            mask = self.ccf >= 0.7*max(self.ccf)
+            timesAboveCut = self.time[mask]
+            if max(timesAboveCut) - min(timesAboveCut) > 20:
+                return -9999
+        except ValueError:
             return -9999
 
         # Compute center using 2nd degree polynomial fit to CFF above 0.4
