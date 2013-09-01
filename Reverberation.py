@@ -30,8 +30,13 @@ class Reverberation():
     def observeConstantCadence(self, nObsCont, nObsLine):
         self.trim()
 
-        self.lcCont = self.lcCont.observeConstantCadence(nObsCont)
-        self.lcLine = self.lcLine.observeConstantCadence(nObsLine)
+        if nObsCont == -1:
+            self.lcLine = self.lcLine.observeConstantCadence(nObsLine)
+        elif nObsLine == -1:
+            self.lcCont = self.lcCont.observeConstantCadence(nObsCont)
+        else:
+            self.lcCont = self.lcCont.observeConstantCadence(nObsCont)
+            self.lcLine = self.lcLine.observeConstantCadence(nObsLine)
 
     def getCrossCorrelationFunction(self, minLag=-50, maxLag=100, resLag=1):
         """
