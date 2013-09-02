@@ -22,14 +22,27 @@ class CCF():
         except ValueError:
             return -9999
 
-        # If we don't have a well defined maximum in the CFF return -9999
+
+        # Figure out if we have several peaks above threshold
         try:
-            mask = self.ccf >= 0.7*max(self.ccf)
+            multimodalThreshold = 0.7
+            mask = self.ccf >= multimodalThreshold*max(self.ccf)
             timesAboveCut = self.time[mask]
-            if max(timesAboveCut) - min(timesAboveCut) > 20:
+            timesAboveCutSub = timesAboveCut[1:].astype(float) - timesAboveCut[:-1].astype(float)
+            if np.any(timesAboveCutSub > 1):
                 return -9999
         except ValueError:
             return -9999
+
+        # If we don't have a well defined maximum in the CFF return -9999
+        # try:
+        #     mask = self.ccf >= 0.7*max(self.ccf)
+        #     timesAboveCut = self.time[mask]
+        #     print "max-min = ", max(timesAboveCut) - min(timesAboveCut)
+        #     if max(timesAboveCut) - min(timesAboveCut) > 20:
+        #         return -9999
+        # except ValueError:
+        #     return -9999
 
         # Compute center using 2nd degree polynomial fit to CFF above 0.4
         #fit = np.polyfit(timesCut, ccfCut, 2)
