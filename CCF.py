@@ -73,9 +73,12 @@ class CCF():
         plt.grid(True)
         plt.plot(self.time, self.ccf, label="CCF")
         plt.plot([self.time[0], self.time[-1]],
-            [self.threshold*max(self.ccf), self.threshold*max(self.ccf)],
-            '--r',
+            [self.threshold*max(self.ccf), self.threshold*max(self.ccf)],'--y',
             label='Threshold')
+        plt.plot([self.time[0], self.time[-1]],
+            [self.multimodalThreshold*max(self.ccf), self.multimodalThreshold*max(self.ccf)],'--r',
+            label='Multimodal Threshold')
+        plt.legend()
         plt.show()
 
     def __repr__(self):
