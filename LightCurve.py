@@ -12,6 +12,7 @@ Summary:
 """
 
 import numpy as np
+import matplotlib.pyplot as plt
 
 class LightCurve():
 
@@ -302,8 +303,24 @@ class LightCurve():
 
         return lcObserved
 
+    def plotfft(self):
+        fft = np.fft.fft(self.flux)
+        ps = np.abs(fft)**2.
+
+        time_step = 1. / 30.
+        freqs = np.fft.fftfreq(self.flux.size, time_step)
+        idx = np.argsort(freqs)
+
+        print "max(ps) = ", max(ps)
+        print "std(ps) = ", np.std(ps)
+        plt.figure()
+        plt.semilogy()
+        plt.xlim(0,len(self.flux)/2)
+        #plt.plot(p)
+        plt.plot(freqs[idx], ps[idx])
+        plt.show()
+
     def plot(self, units='Jy', figure=1, color='b', label='', marker='-'):
-        import matplotlib.pyplot as plt
         plt.figure(figure)
         plt.title('LightCurve')
         plt.xlabel('time [days]')
