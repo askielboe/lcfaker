@@ -127,11 +127,16 @@ class Reverberation():
         import matplotlib.pyplot as plt
         plt.figure()
         if len(self.lcCont.ferr) > 0 and len(self.lcLine.ferr) > 0:
+            plt.subplot(211)
             plt.errorbar(self.lcCont.time, self.lcCont.flux, self.lcCont.ferr, label=self.lcCont.label, marker=marker, linestyle=linestyle)
+            plt.subplot(212)
             plt.errorbar(self.lcLine.time, self.lcLine.flux, self.lcLine.ferr, label=self.lcLine.label, marker=marker, linestyle=linestyle)
         else:
+            plt.subplot(211)
             plt.plot(self.lcCont.time, self.lcCont.flux, label=self.lcCont.label, marker=marker, linestyle=linestyle)
+            plt.subplot(212)
             plt.plot(self.lcLine.time, self.lcLine.flux, label=self.lcLine.label, marker=marker, linestyle=linestyle)
+        plt.tight_layout()
         plt.show()
 
     def trim(self):
