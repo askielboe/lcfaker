@@ -6,6 +6,7 @@ class CCF():
         self.time = np.array(time)
         self.ccf = np.array(ccf)
         self.threshold = 0.8
+        self.multimodalThreshold = 0.8
 
     def getLag(self, threshold=-1):
         """
@@ -22,14 +23,12 @@ class CCF():
         except ValueError:
             return -9999
 
-
         # Figure out if we have several peaks above threshold
         try:
-            multimodalThreshold = 0.7
-            mask = self.ccf >= multimodalThreshold*max(self.ccf)
+            mask = self.ccf >= self.multimodalThreshold*max(self.ccf)
             timesAboveCut = self.time[mask]
             timesAboveCutSub = timesAboveCut[1:].astype(float) - timesAboveCut[:-1].astype(float)
-            if np.any(timesAboveCutSub > 1):
+            if np.any(timesAboveCutSub > 5.):
                 return -9999
         except ValueError:
             return -9999
