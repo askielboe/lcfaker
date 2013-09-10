@@ -11,6 +11,7 @@ Summary:
 
 """
 
+import sys
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -112,6 +113,9 @@ class LightCurve():
             g, length = mrk50_transfer_function_1()
         elif type == 'mrk50_2':
             g, length = mrk50_transfer_function_2()
+        else:
+            "ERROR: Invalid transfer function requested!"
+            sys.exit(2)
 
         # To convolve close to boundaries we need to extrapolate beyond the boundaries
         # Constant extrapolation using only the values at the boundaries
