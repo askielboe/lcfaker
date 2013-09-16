@@ -103,6 +103,23 @@ class LightCurve():
             length = len(x)
             return y/y.sum(), length
 
+        def mrk335_transfer_function():
+            """ Returns a normalized Mrk335 transfer function kernel """
+            #norm = 33.3227
+            a = 17.1
+            b = 0.0638
+
+            x = np.arange(0., 25.1, 1.0)
+            y = x**2. / (a + b * np.exp(x))
+
+            # Add zeros before t = 0 (causality)
+            zeros = np.zeros(25)
+            x = np.arange(-25.0, 25.1, 1.0)
+            y = np.concatenate((zeros,y))
+
+            length = len(x)
+            return y/y.sum(), length
+
         if type == 'gaus':
             g = gauss_kern(sigma)
         elif type == 'gaus_trunc':
@@ -113,6 +130,8 @@ class LightCurve():
             g, length = mrk50_transfer_function_1()
         elif type == 'mrk50_2':
             g, length = mrk50_transfer_function_2()
+        elif type == 'mrk335':
+            g, length = mrk335_transfer_function()
         else:
             "ERROR: Invalid transfer function requested!"
             sys.exit(2)
