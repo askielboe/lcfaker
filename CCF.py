@@ -48,17 +48,25 @@ class CCF():
         #center = -fit[1]/(2.*fit[0])
         #print center
 
-        # Compute center using accumulated CCF values above cut of 0.2
-        sumCCF = np.sum(ccfCut)
-        sumRunning = 0.
+        # Compute center using accumulated CCF values above cut
+        # sumCCF = np.sum(ccfCut)
+        # sumRunning = 0.
+        # for i in range(len(ccfCut)):
+        #     sumRunning += ccfCut[i]
+        #     if sumRunning >= sumCCF / 2.:
+        #         center = (timesCut[i] + timesCut[i-1]) / 2.
+        #         break
+        #print 'center = ', center
+
+        # Compute centroid
+        centroid = 0.0
+        ccfCut /= np.sum(ccfCut)
         for i in range(len(ccfCut)):
-            sumRunning += ccfCut[i]
-            if sumRunning >= sumCCF / 2.:
-                center = (timesCut[i] + timesCut[i-1]) / 2.
-                break
+            centroid += ccfCut[i] * timesCut[i]
+        #print 'centroid = ', centroid
 
         try:
-            return center
+            return centroid
         except UnboundLocalError:
             return -9999
             print 'WARNING: Could not find CCF center! - Returning 0.0.'
