@@ -64,13 +64,21 @@ class CCF():
 
         # Compute centroid
         centroid = 0.0
-        ccfCut /= np.sum(ccfCut)
+        ccfCutNormalized = ccfCut / np.sum(ccfCut)
         for i in range(len(ccfCut)):
-            centroid += ccfCut[i] * timesCut[i]
+            centroid += ccfCutNormalized[i] * timesCut[i]
         #print 'centroid = ', centroid
 
         if isnan(centroid):
             return -9999
+
+        # If the CCF is rising to the edge of the CCF window we also reject the CCF
+        try:
+            if self.ccf[0] > np.mean(ccfCut) or self.ccf[-1] > np.mean(ccfCut):
+                return -9999
+        except:
+            return -9999
+
         try:
             return centroid
         except UnboundLocalError:
