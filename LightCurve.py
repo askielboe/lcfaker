@@ -340,6 +340,81 @@ class LightCurve():
 
         return lcObserved
 
+    def observeGaps(self, obs_duration, gap_duration):
+
+        lcObserved = LightCurve()
+
+        timeObserved = []
+        fluxObserved = []
+        ferrObserved = []
+
+        class Gap():
+            def __init__(self, obs_duration, gap_duration):
+                self.start = 0
+                self.end = 0
+                self.n_obs_periods = 1
+                self.n_gap_periods = 0
+                self.obs_duration = obs_duration
+                self.gap_duration = gap_duration
+
+                self.update()
+
+            def update(self):
+                self.start = self.n_obs_periods * self.obs_duration  + (self.n_gap_periods) * self.gap_duration
+                self.end = self.n_obs_periods * self.obs_duration + (self.n_gap_periods+1) * self.gap_duration
+                # print "gap.start = ", self.start, " gap.end = ", self.end
+
+            def increment(self):
+                self.n_obs_periods += 1
+                self.n_gap_periods += 1
+                self.update()
+
+        gap = Gap(obs_duration, gap_duration)
+
+        # Make a list of all gap limits
+        n_periods = self.time[-1] % (obs_duration + gap_duration)
+        gaps = []
+        for i in range(int(n_periods)):
+            gaps.append((gap.start, gap.end))
+            gap.increment()
+
+        in_gap = False
+        gap_index = 0
+        # Check if we are in a gap to begin with
+        for i, gap in enumerate(gaps):
+            gap_start = gap[0]
+            gap_end = gap[1]
+            if self.time[0] >= gap_start and self.time[0] <= gap_end:
+                in_gap = True
+                gap_index = i
+                break
+
+        for i in range(len(self.time)):
+            # Check if the time is in a gap
+            # print "self.time[i] > gap.start: ", self.time[i], " > ", gap.start, " : ", self.time[i] > gap.start
+            # print "self.time[i] < gap.end: ", self.time[i], " < ", gap.end, " : ", self.time[i] < gap.end
+            gap = gaps[gap_index]
+            gap_start = gap[0]
+            gap_end = gap[1]
+
+            if self.time[i] >= gap_start and self.time[i] <= gap_end:
+                in_gap = True
+            else:
+                if (in_gap == True):
+                    # If we are transitioning from in a gap to not in a gap we need to update counters
+                    in_gap = False
+                    gap_index += 1
+
+                timeObserved.append(self.time[i])
+                fluxObserved.append(self.flux[i])
+                ferrObserved.append(self.ferr[i])
+
+        lcObserved.time = np.asarray(timeObserved)
+        lcObserved.flux = np.asarray(fluxObserved)
+        lcObserved.ferr = np.asarray(ferrObserved)
+
+        return lcObserved
+
     def plotfft(self):
         fft = np.fft.fft(self.flux)
         ps = np.abs(fft)**2.
