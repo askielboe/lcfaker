@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from math import isnan
 
 class CCF():
     def __init__(self, time, ccf):
@@ -21,6 +22,9 @@ class CCF():
             ccfCut = self.ccf[mask]
             timesCut = self.time[mask]
         except ValueError:
+            return -9999
+
+        if len(ccfCut) == 0:
             return -9999
 
         # Figure out if we have several peaks above threshold
@@ -65,11 +69,13 @@ class CCF():
             centroid += ccfCut[i] * timesCut[i]
         #print 'centroid = ', centroid
 
+        if isnan(centroid):
+            return -9999
         try:
             return centroid
         except UnboundLocalError:
             return -9999
-            print 'WARNING: Could not find CCF center! - Returning 0.0.'
+            print 'WARNING: Could not find CCF center! (returning -9999)'
             #raise ValueError('ERROR: Could not find CCF center!')
 
     def plot(self):
