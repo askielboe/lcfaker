@@ -56,8 +56,8 @@ class Reverberation():
 
         # Get interpolated time and flux over the whole light curve range with resLag intervals
         # These are the fluxed used for the t_i +/- tau function calls in the CCF
-        lcContTimeInterpolated = np.arange(min(lcCont.time), max(lcCont.time) + resLag, resLag)
-        lcLineTimeInterpolated = np.arange(min(lcLine.time), max(lcLine.time) + resLag, resLag)
+        lcContTimeInterpolated = np.arange(lcCont.time[0], lcCont.time[-1] + resLag, resLag)
+        lcLineTimeInterpolated = np.arange(lcLine.time[0], lcLine.time[-1] + resLag, resLag)
         lcContFluxInterpolated = lcCont.getFluxInterpolated(lcContTimeInterpolated)
         lcLineFluxInterpolated = lcLine.getFluxInterpolated(lcLineTimeInterpolated)
 
@@ -70,7 +70,7 @@ class Reverberation():
 
             # Some of the lagged times we can't calculate, becuase they are outside data range
             # These we mask out in timeLagged
-            timeLaggedMask = (timeLagged >= min(lcCont.time)) * (timeLagged <= max(lcCont.time))
+            timeLaggedMask = (timeLagged >= lcCont.time[0]) * (timeLagged <= lcCont.time[-1])
             timeLagged = timeLagged[timeLaggedMask]
             if len(timeLagged) <= 1: continue
 
@@ -98,7 +98,7 @@ class Reverberation():
 
             # Some of the lagged times we can't calculate, becuase they are outside data range
             # These we mask out in timeLagged
-            timeLaggedMask = (timeLagged >= min(lcLine.time)) * (timeLagged <= max(lcLine.time))
+            timeLaggedMask = (timeLagged >= lcLine.time[0]) * (timeLagged <= lcLine.time[-1])
             timeLagged = timeLagged[timeLaggedMask]
             if len(timeLagged) <= 1: continue
 

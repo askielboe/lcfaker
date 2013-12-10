@@ -267,7 +267,8 @@ class LightCurve():
             tInter = np.array(tInter)
 
         # If chosen time is outside self time raise an exception
-        if np.any(tInter < min(self.time)) or np.any(tInter > max(self.time)):
+        # if np.any(tInter < min(self.time)) or np.any(tInter > max(self.time)):
+        if np.any(tInter < self.time[0]) or np.any(tInter > self.time[-1]):
             raise ValueError('Time for interpolation outside data range. \n mintInt = '+str(min(tInter))+' maxtInt = '+str(max(tInter))+', \n minTime = '+str(min(self.time))+', maxTime = '+str(max(self.time)))
 
         # Otherwise we do interpolation
@@ -278,9 +279,11 @@ class LightCurve():
 
         # Calculate the fluxes we don't already have from data
         # Figure out which slopes belong to which tInter
-        # BUT: If max(self.time) is in iInter we have a problem, so we take it out..
+        # BUT: If max(self.time) is in tInter we have a problem, so we take it out..
         maxIntInter = False
-        if max(tInter) == max(self.time):
+
+        # if max(tInter) == max(self.time):
+        if tInter[-1] == self.time[-1]:
             tInter = tInter[:-1]
             maxIntInter = True
 
