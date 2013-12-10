@@ -147,6 +147,10 @@ class LightCurve():
         self.flux = self.flux[length:]
         self.flux = self.flux[:-length]
 
+        # If the smoothing is gaussian we lag the light curve
+        if type == 'gaus':
+            self.lag_const(mu)
+
     def lag_const(self, lag_const):
         #print "Running lag_const.."
         self.time = self.time + lag_const
