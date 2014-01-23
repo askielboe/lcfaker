@@ -76,12 +76,14 @@ class Reverberation():
 
             # Now we need to find the fluxes for C(t_i - tau)
             # WARNING: This only works because the times are in increasing order!
-            lcContTimeIndices = np.searchsorted(lcContTimeInterpolated, timeLagged)
-            #lcLineTime = lcLine.time[timeLaggedMask] # We don't actually need these times as we can just put the mask in lcLine.flux directly (as done below). And the flux is all we need.
+            lcContTimeIndices = ((timeLagged - lcCont.time[0]) / resLag).astype(int)
+            # lcContTimeIndices = np.searchsorted(lcContTimeInterpolated, timeLagged) # Slower alternative
+
             # Here we set the actual fluxes
             lcContFluxInterLagged = lcContFluxInterpolated[lcContTimeIndices]
-            # Since timeLagged is based on lcLine times, for each time - tau we can't calculate, the corresponding time
-            # we remove in lcLine.
+
+            # Since timeLagged is based on lcLine times, for each (time - tau) we can't calculate,
+            # we remove the corresponding time in lcLine
             lcLineFlux = lcLine.flux[timeLaggedMask]
 
             # Compute the CC value for the given tau
@@ -104,7 +106,8 @@ class Reverberation():
 
             # Now we need to find the fluxes for L(t_i - tau)
             # WARNING: This only works because the times are in increasing order!
-            lcLineTimeIndices = np.searchsorted(lcLineTimeInterpolated, timeLagged)
+            lcLineTimeIndices = ((timeLagged - lcLine.time[0]) / resLag).astype(int)
+            # lcLineTimeIndices = np.searchsorted(lcLineTimeInterpolated, timeLagged) # Slower alternative
 
             # Here we set the actual fluxes
             lcLineFluxInterLagged = lcLineFluxInterpolated[lcLineTimeIndices]
