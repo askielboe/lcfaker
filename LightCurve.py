@@ -314,8 +314,6 @@ class LightCurve():
             raise ValueError('Number of observations larger than available data! Please choose a lower nObs. \n \
                 nObs = '+str(nObs)+' nDays = '+str(len(self.time)))
 
-        lcObserved = LightCurve()
-
         timeObserved = []
         fluxObserved = []
         ferrObserved = []
@@ -337,9 +335,7 @@ class LightCurve():
             fluxObserved.append(self.flux[t])
             ferrObserved.append(self.ferr[t])
 
-        lcObserved.time = np.asarray(timeObserved)
-        lcObserved.flux = np.asarray(fluxObserved)
-        lcObserved.ferr = np.asarray(ferrObserved)
+        lcObserved = LightCurve(np.asarray(timeObserved), np.asarray(fluxObserved), np.asarray(ferrObserved))
 
         # Adding noise
         if snr > -1:
@@ -348,8 +344,6 @@ class LightCurve():
         return lcObserved
 
     def observeGaps(self, obs_duration, gap_duration):
-
-        lcObserved = LightCurve()
 
         timeObserved = []
         fluxObserved = []
@@ -416,9 +410,7 @@ class LightCurve():
                 fluxObserved.append(self.flux[i])
                 ferrObserved.append(self.ferr[i])
 
-        lcObserved.time = np.asarray(timeObserved)
-        lcObserved.flux = np.asarray(fluxObserved)
-        lcObserved.ferr = np.asarray(ferrObserved)
+        lcObserved = LightCurve(np.asarray(timeObserved), np.asarray(fluxObserved), np.asarray(ferrObserved))
 
         return lcObserved
 
