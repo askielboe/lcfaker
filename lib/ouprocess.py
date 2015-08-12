@@ -6,8 +6,8 @@ def OUprocess(N, Nmax, mu, sf, tau):
 	t = np.arange(0.0,Nmax,dt)
 
 	exp = np.exp(-dt/tau)
-	norm = mu * (1-exp)
-	var = 0.5 * sf**2.0 * (1-np.exp(-2*dt/tau))
+	norm = mu * (1.0-exp)
+	var = 0.5 * sf**2.0 * (1.0-np.exp(-2.0*dt/tau))
 	std = np.sqrt(var)
 
 	X = np.zeros(N)

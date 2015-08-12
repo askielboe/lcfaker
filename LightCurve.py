@@ -23,6 +23,7 @@ class LightCurve():
         self.flux = np.array([f for (t,f) in sorted(zip(time,flux))])
         self.ferr = np.array([fe for (t,fe) in sorted(zip(time,ferr))])
         self.time = np.sort(time)
+        self.time_intervals = (self.time[1:] - self.time[:-1])/2.0
         self._label = label
 
     @property
@@ -35,6 +36,12 @@ class LightCurve():
         mask = arr >= minimum
         mask *= arr <= maximum
         return mask
+
+    def applyObservingMask(self, observing_mask):
+        self.time = self.time[observing_mask]
+        self.flux = self.flux[observing_mask]
+        self.ferr = self.ferr[observing_mask]
+        self.time_intervals = (self.time[1:] - self.time[:-1])/2.0
 
     def smooth(self, sigma=3.0, mu = 0.0, type='gaus'):
         import numpy as np
@@ -291,6 +298,7 @@ class LightCurve():
         Output: None (modifies the instance).
         """
         self.flux = self.flux * float(scale)
+        self.ferr = self.ferr * float(scale)
 
     def getFluxInterpolated(self, tInter):
         """
@@ -471,7 +479,7 @@ class LightCurve():
         plt.plot(freqs[idx], ps[idx])
         plt.show()
 
-    def plot(self, units='Jy', figure=1, color='b', label='', marker='-'):
+    def plot(self, units='Jy', figure=1, color='b', label='', marker='+'):
         plt.figure(figure)
         plt.title('LightCurve')
         plt.xlabel('time [days]')
@@ -492,6 +500,7 @@ class LightCurve():
         else:
             plt.plot(self.time, y, marker=marker, label=label)
 
+        plt.ylim(0.0, np.max(self.flux)*(1.05))
         plt.legend(frameon=False)
         #plt.savefig('lightcurve.pdf')
         plt.show()
@@ -499,8 +508,9 @@ class LightCurve():
     def getAverageFlux(self):
         return sum(self.flux)/len(self.flux)
 
-    def saveToTxt(self, outFileName='lightcurve.txt', signalToNoise=10.):
-        from numpy import savetxt, transpose
-        errorBars = 1./float(signalToNoise)*self.flux
-        savetxt(outFileName, transpose((self.time, self.flux, errorBars)))
+    def saveToTxt(self, outFileName='lightcurve.txt'):
+        # from numpy import savetxt, transpose
+        # errorBars = 1./float(signalToNoise)*self.flux
+        # savetxt(outFileName, transpose((self.time, self.flux, errorBars)))
+        np.savetxt(outFileName, np.transpose((self.time, self.flux, self.ferr)))
 

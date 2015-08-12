@@ -181,7 +181,7 @@ class Spectrum():
 
         # return integralFlux, integralError
 
-    def fitContinuum(self, contFitWindow=[()]):
+    def fitContinuum(self, contFitWindow=[()], plot=False):
         """
         Fits the continuum using a straight line using wavelength windows.
         Input: List of tuples defining the wavelength windows.
@@ -200,7 +200,16 @@ class Spectrum():
         # Fit a polynomial
         fitMean, fitCov = np.polyfit(wavelength, flux, 1, cov=True)
 
+        if plot == True:
+            plt.plot()
+
         return fitMean, fitCov
+
+    def subtractContinuum(self, contFitWindow=[()]):
+        fitMean, fitCov = self.fitContinuum(contFitWindow)
+        continuum_fit = np.poly1d(fitMean)
+        self.flux -= continuum_fit(self.wavelength)
+        self.ferr *= np.sqrt(2)
 
     def integrateContinuum(self, contIntWindow=(), getErrors = 1, verbose = 0):
         """

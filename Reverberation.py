@@ -27,6 +27,11 @@ class Reverberation():
         self.lcCont = lcCont
         self.lcLine = lcLine
 
+    def applyObservingMask(self, observing_mask):
+        self.trim()
+        self.lcCont.applyObservingMask(observing_mask)
+        self.lcLine.applyObservingMask(observing_mask)
+
     def observeConstantCadence(self, nObsCont, nObsLine):
         self.trim()
 
@@ -38,7 +43,7 @@ class Reverberation():
             self.lcCont = self.lcCont.observeConstantCadence(nObsCont)
             self.lcLine = self.lcLine.observeConstantCadence(nObsLine)
 
-    def getCrossCorrelationFunction(self, minLag=-50, maxLag=100, resLag=1):
+    def getCrossCorrelationFunction(self, minLag=-50, maxLag=100, resLag=1, num=-1):
         """
         Returns a cross correlation function (CCF) instance of a CCF class.
         """
@@ -56,8 +61,12 @@ class Reverberation():
 
         # Get interpolated time and flux over the whole light curve range with resLag intervals
         # These are the fluxed used for the t_i +/- tau function calls in the CCF
-        lcContTimeInterpolated = np.arange(lcCont.time[0], lcCont.time[-1] + resLag, resLag)
-        lcLineTimeInterpolated = np.arange(lcLine.time[0], lcLine.time[-1] + resLag, resLag)
+        if num > -1:
+            lcContTimeInterpolated = np.linspace(lcCont.time[0], lcCont.time[-1], num+1)
+            lcLineTimeInterpolated = np.linspace(lcLine.time[0], lcLine.time[-1], num+1)
+        else:
+            lcContTimeInterpolated = np.arange(lcCont.time[0], lcCont.time[-1] + resLag, resLag)
+            lcLineTimeInterpolated = np.arange(lcLine.time[0], lcLine.time[-1] + resLag, resLag)
         lcContFluxInterpolated = lcCont.getFluxInterpolated(lcContTimeInterpolated)
         lcLineFluxInterpolated = lcLine.getFluxInterpolated(lcLineTimeInterpolated)
 
@@ -68,7 +77,7 @@ class Reverberation():
             # Calculate the times for the lagged light curve
             timeLagged = lcLine.time - tau
 
-            # Some of the lagged times we can't calculate, becuase they are outside data range
+            # Some of the lagged times we can't calculate, because they are outside data range
             # These we mask out in timeLagged
             timeLaggedMask = (timeLagged >= lcCont.time[0]) * (timeLagged <= lcCont.time[-1])
             timeLagged = timeLagged[timeLaggedMask]
@@ -98,7 +107,7 @@ class Reverberation():
         for i, tau in enumerate(times):
             timeLagged = lcCont.time + tau
 
-            # Some of the lagged times we can't calculate, becuase they are outside data range
+            # Some of the lagged times we can't calculate, because they are outside data range
             # These we mask out in timeLagged
             timeLaggedMask = (timeLagged >= lcLine.time[0]) * (timeLagged <= lcLine.time[-1])
             timeLagged = timeLagged[timeLaggedMask]

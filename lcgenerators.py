@@ -174,10 +174,11 @@ def syntheticLightCurveMacLeod(nDays = 200, maxDays = 200.0, \
     """
     Function to generate lightcurve based on damped random walk
     using equations from MacLeod et al.
+     * dist is the luminosity distance in parsec
     """
     import numpy as np
     from lib.ouprocess import OUprocess
-    from lib.units import magi_to_fluxJy
+    from lib.units import magi_to_flux
 
     # print "Generating synthetic light curve using method described in MacLeod et al."
     # print "Parameters:"
@@ -227,10 +228,10 @@ def syntheticLightCurveMacLeod(nDays = 200, maxDays = 200.0, \
     time, mag = OUprocess(nDays, maxDays, magApparant, sf, tau)
 
     # Convert from magnitude to flux
-    flux = magi_to_fluxJy(mag)
+    flux = magi_to_flux(mag)
 
     # Normalize flux
-    flux = flux / np.max(flux)
+    # flux = flux / np.max(flux)
 
     # Add zero-noise
     ferr = np.zeros(len(flux))
