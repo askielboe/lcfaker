@@ -40,7 +40,15 @@ class LightCurve():
         import numpy as np
         import scipy.signal as signal
 
-        length = int(sigma*10)
+        length = int(sigma*10.0)
+
+        def tophat(sigma):
+            """ Returns a normalized tophat kernel for convolutions """
+            if sigma < 1.0: sigma = 1.0
+            g = np.zeros(length)
+            g = np.append(g,np.ones(sigma*2.0))
+            g = np.append(g,np.zeros(length))
+            return g / g.sum()
 
         def gauss_kern(sigma):
             """ Returns a normalized 1D gauss kernel array for convolutions """
@@ -57,6 +65,34 @@ class LightCurve():
             g = np.concatenate((zeros,g))
 
             return g / g.sum(), length
+
+        def gamma_distribution(sigma):
+            """ Returns a normalized gamma distribution kernel for convolutions """
+            from scipy.stats import gamma
+
+            k = sigma
+            t = np.sqrt(sigma)
+            dist = gamma(k, 0, t)
+
+            x = np.arange(0.0, 10.0 * sigma, 1.0)
+            x[0] = 1e-20
+
+            g = dist.pdf(x)
+            shift = np.argmax(dist.pdf(x))
+
+            g = np.concatenate((np.zeros(int(10.0 * sigma)-1), g))
+
+            g = g[shift:-1]
+            g = np.append(g, np.zeros(shift))
+
+            # import matplotlib.pyplot as plt
+            # plt.plot(g)
+            # plt.show()
+
+            # print x[np.argmax(dist.pdf(x))]
+            # print dist.mean(), dist.median(), np.sqrt(dist.var())
+
+            return g / g.sum()
 
         def lorentz_kern(sigma):
             """ Returns a normalized 1D lorentz kernel array for convolutions """
@@ -122,6 +158,10 @@ class LightCurve():
 
         if type == 'gaus':
             g = gauss_kern(sigma)
+        elif type == 'tophat':
+            g = tophat(sigma)
+        elif type == 'gamma_distribution':
+            g = gamma_distribution(sigma)
         elif type == 'gaus_trunc':
             g, length = gauss_kern_truncated(mu, sigma)
         elif type == 'lorentz':
@@ -133,7 +173,7 @@ class LightCurve():
         elif type == 'mrk335':
             g, length = mrk335_transfer_function()
         else:
-            "ERROR: Invalid transfer function requested!"
+            print "ERROR: Invalid transfer function requested!"
             sys.exit(2)
 
         # To convolve close to boundaries we need to extrapolate beyond the boundaries
@@ -147,13 +187,13 @@ class LightCurve():
         self.flux = self.flux[length:]
         self.flux = self.flux[:-length]
 
-        # If the smoothing is gaussian we lag the light curve
-        if type == 'gaus':
+        # If the smoothing is gaussian or tophat we lag the light curve
+        if type == 'gaus' or 'tophat' or 'gamma_distribution':
             self.lag_const(mu)
 
     def lag_const(self, lag_const):
         #print "Running lag_const.."
-        self.time = self.time + lag_const
+        self.time += lag_const - 1.0
         return None
 
     # def lag_luminosity(self):
