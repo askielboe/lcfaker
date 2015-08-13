@@ -43,7 +43,7 @@ class LightCurve():
         self.ferr = self.ferr[observing_mask]
         self.time_intervals = (self.time[1:] - self.time[:-1])/2.0
 
-    def smooth(self, sigma=3.0, mu = 0.0, type='gaus'):
+    def smooth(self, sigma=3.0, mu = 0.0, type='gaus', plot_kernel=False):
         import numpy as np
         import scipy.signal as signal
 
@@ -182,6 +182,16 @@ class LightCurve():
         else:
             print "ERROR: Invalid transfer function requested!"
             sys.exit(2)
+
+        if plot_kernel:
+            plt.figure()
+            if type == 'gaus' or 'tophat' or 'gamma_distribution':
+                x = np.arange(len(g)) - int(0.5*len(g)) + mu
+                plt.plot(x, g)
+            else:
+                x = np.arange(len(g)) - int(0.5*len(g))
+                plt.plot(g)
+            plt.show()
 
         # To convolve close to boundaries we need to extrapolate beyond the boundaries
         # Constant extrapolation using only the values at the boundaries
